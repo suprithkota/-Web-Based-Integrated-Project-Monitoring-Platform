@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}AI Project Intelligence Assistant — ProjectPulse AI{% endblock %}
+{% block header_title %}AI Project Intelligence Assistant{% endblock %}
+{% block breadcrumb %}Grounded Database Intelligence & Analytical Querying{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Suggested Prompts Chips Bar -->
+        <div class="mb-3">
+            <div class="small text-muted fw-bold text-uppercase mb-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Frequently Asked Intelligence Inquiries:
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+                {% for prompt in sample_prompts %}
+                <button type="button" class="prompt-chip" onclick="submitPrompt('{{ prompt }}')">
+                    <i class="fa-regular fa-comment-dots text-primary me-1"></i> {{ prompt }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container shadow-sm">
+            <div id="chatMessages" class="chat-messages">
+                <!-- Welcome Assistant Message -->
+                <div class="chat-bubble assistant-bubble shadow-sm">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="badge bg-primary text-white rounded-circle p-2">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <strong class="text-primary">ProjectPulse Intelligence Assistant</strong>
+                        <span class="badge bg-light text-secondary border small ms-auto">Grounding: Live SQLite DB</span>
+                    </div>
+                    <div>
+                        Namaste! I am your AI Project Intelligence Assistant. I am grounded directly in the monitored infrastructure database to provide analytical insights, root causes, and delay/cost risk assessments without hallucinations.
+                        <div class="mt-2 text-muted small">
+                            Click any suggested prompt above, or type questions like <em>"Why is PRJ-0003 high risk?"</em> or <em>"Which ministry has the most critical projects?"</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Bar -->
+            <form id="chatForm" class="chat-input-bar">
+                <div class="input-group">
+                    <input type="text" id="chatInput" class="form-control" placeholder="Ask about project risks, ministries, delays, or cost escalation..." autocomplete="off" required>
+                    <button type="submit" id="sendBtn" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Ask
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="small text-muted text-center mt-3">
+            <i class="fa-solid fa-shield-halved text-success me-1"></i>
+            Responses are synthesised from verified project records, milestone logs, and calibrated AI risk metrics.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Data Ingestion & Import — ProjectPulse AI{% endblock %}
+{% block header_title %}Project Monitoring Data Ingestion{% endblock %}
+{% block breadcrumb %}Batch Project Import & Automated Validation Engine{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+    <!-- Upload Panel -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-cloud-arrow-up text-primary"></i> Upload Monitoring Data</h3>
+                <span class="badge bg-light text-secondary border">CSV File</span>
+            </div>
+            <div class="panel-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-uppercase text-muted">Select CSV or Excel (.xlsx) File</label>
+                        <input type="file" name="file" class="form-control form-control-lg fs-6" accept=".csv,.xlsx,.xls" required>
+                        <div class="form-text small">Maximum file size: 16 MB. Supported: CSV, Excel (.xlsx, .xls).</div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small border-0 mb-4">
+                        <i class="fa-solid fa-info-circle me-1"></i>
+                        Uploaded records are automatically ingested, parsed against validation schemas, processed through the AI/ML Risk Engine, and checked for Early Warning triggers.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="fa-solid fa-upload me-1"></i> Validate & Ingest Dataset
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Required Schema Reference Card -->
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white mt-4">
+            <h6 class="fw-bold text-dark text-uppercase small mb-2"><i class="fa-solid fa-table-columns text-primary me-1"></i> Required CSV Columns:</h6>
+            <div class="small font-monospace bg-light p-2 rounded border text-muted">
+                project_code, project_name, ministry, sector, state, approved_cost, physical_progress, planned_progress
+            </div>
+            <div class="small text-muted mt-2">
+                Optional columns: <code>revised_cost, expenditure, delay_days, contractor_status, land_acquisition_status, environmental_clearance_status, utility_shifting_status</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Report (if import just completed) -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-clipboard-check text-primary"></i> Ingestion Validation Summary</h3>
+                <span class="badge bg-secondary">Status Report</span>
+            </div>
+            <div class="panel-body">
+                {% if summary %}
+                <div class="row g-2 text-center mb-4">
+                    <div class="col-4">
+                        <div class="p-3 border rounded bg-light">
+                            <div class="small text-muted">Total Rows</div>
+                            <div class="fs-3 fw-bold text-dark">{{ summary.total_rows }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 border rounded bg-success bg-opacity-10 border-success">
+                            <div class="small text-success fw-bold">Successful</div>
+                            <div class="fs-3 fw-bold text-success">{{ summary.successful }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 border rounded bg-danger bg-opacity-10 border-danger">
+                            <div class="small text-danger fw-bold">Rejected / Failed</div>
+                            <div class="fs-3 fw-bold text-danger">{{ summary.failed }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if summary.errors %}
+                <h6 class="fw-bold text-danger small text-uppercase mb-2"><i class="fa-solid fa-circle-exclamation me-1"></i> Validation Rejection Log:</h6>
+                <div class="table-responsive" style="max-height: 250px;">
+                    <table class="gov-table small">
+                        <thead>
+                            <tr>
+                                <th>Row #</th>
+                                <th>Project Code</th>
+                                <th>Rejection Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for err in summary.errors %}
+                            <tr>
+                                <td class="font-monospace fw-bold">{{ err.row }}</td>
+                                <td class="font-monospace text-secondary">{{ err.code }}</td>
+                                <td class="text-danger">{{ err.reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success py-3 text-center border-0 mb-0">
+                    <i class="fa-solid fa-circle-check fs-2 text-success mb-2 d-block"></i>
+                    <strong>Clean Dataset!</strong> All rows passed automated schema verification.
+                </div>
+                {% endif %}
+
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-file-csv fs-1 text-secondary opacity-50 mb-3"></i>
+                    <h6>No Ingestion Session Active</h6>
+                    <p class="small text-muted mb-0">Upload a CSV file on the left to view parsing diagnostics and ingestion verification reports.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

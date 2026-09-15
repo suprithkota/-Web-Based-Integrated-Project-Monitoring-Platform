@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}400 Invalid Request — ProjectPulse AI{% endblock %}
+{% block header_title %}Request Validation Failed{% endblock %}
+{% block breadcrumb %}Application Security Guard / Bad Request{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="display-1 fw-bold text-warning mb-3">400</div>
+        <h3 class="fw-bold text-dark mb-2">{{ error_title or "Invalid or Expired Request" }}</h3>
+        <p class="text-secondary mb-4">
+            {{ error_message or "The security token or request parameters could not be validated. If your session expired, please refresh and retry." }}
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary px-4">
+                <i class="fa-solid fa-arrow-left me-1"></i> Go Back
+            </a>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary px-4">
+                <i class="fa-solid fa-house me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}404 Not Found — ProjectPulse AI{% endblock %}
+{% block header_title %}Resource Not Found{% endblock %}
+{% block breadcrumb %}Navigation Error{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="display-1 fw-bold text-secondary mb-3">404</div>
+        <h3 class="fw-bold text-dark mb-2">Project or Record Not Found</h3>
+        <p class="text-secondary mb-4">
+            The requested infrastructure record, alert, or intelligence view does not exist in the database or may have been relocated.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary px-4">
+                <i class="fa-solid fa-house me-1"></i> Dashboard
+            </a>
+            <a href="{{ url_for('projects.index') }}" class="btn btn-outline-secondary px-4">
+                <i class="fa-solid fa-folder-tree me-1"></i> Projects
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

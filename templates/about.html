@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}About Solution — ProjectPulse AI{% endblock %}
+{% block header_title %}About ProjectPulse AI{% endblock %}
+{% block breadcrumb %}SIH26103 Solution Architecture & Value Proposition{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Hero Value Proposition Banner -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4 text-white" style="background: linear-gradient(135deg, #0d1b2a, #1d3557);">
+            <div class="badge bg-warning text-dark fw-bold mb-3 px-3 py-2 text-uppercase" style="width: fit-content;">
+                SIH Problem Statement: SIH26103
+            </div>
+            <h2 class="display-6 fw-bold mb-3">ProjectPulse AI</h2>
+            <h5 class="fw-light text-light opacity-90 mb-4" style="line-height: 1.6;">
+                «"Existing monitoring systems show what is happening. Our platform predicts what is likely to happen next, explains why, and helps decision-makers identify where intervention may be required."»
+            </h5>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-light text-dark px-3 py-2"><i class="fa-solid fa-brain text-primary me-1"></i> Explainable ML</span>
+                <span class="badge bg-light text-dark px-3 py-2"><i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Early Warning Alerts</span>
+                <span class="badge bg-light text-dark px-3 py-2"><i class="fa-solid fa-hand-holding-medical text-success me-1"></i> Targeted Interventions</span>
+                <span class="badge bg-light text-dark px-3 py-2"><i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> What-If Simulation</span>
+            </div>
+        </div>
+
+        <!-- Problem vs Existing vs Our Innovation -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white">
+                    <div class="rounded-3 p-3 bg-danger bg-opacity-10 text-danger fs-3 mb-3" style="width: fit-content;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">The Challenge</h5>
+                    <p class="small text-secondary mb-0">
+                        Mega public infrastructure projects often experience unforeseen schedule delays, cost escalation, land acquisition hurdles, and contractor coordination bottlenecks that compound before administrative intervention occurs.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white">
+                    <div class="rounded-3 p-3 bg-primary bg-opacity-10 text-primary fs-3 mb-3" style="width: fit-content;">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Existing Ecosystem (PAIMANA)</h5>
+                    <p class="small text-secondary mb-0">
+                        India's PAIMANA portal provides comprehensive project monitoring, expenditure tracking, milestones, and status reporting. It serves as the authoritative single source of truth for <em>what is happening currently</em>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white border-top border-4 border-success">
+                    <div class="rounded-3 p-3 bg-success bg-opacity-10 text-success fs-3 mb-3" style="width: fit-content;">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Our Innovation Layer</h5>
+                    <p class="small text-secondary mb-0">
+                        ProjectPulse AI complements PAIMANA by transforming backward-looking monitoring data into forward-looking predictive risk models, explainable root-cause attribution, automated early warnings, and scenario simulations.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Architecture Card -->
+        <div class="dashboard-panel mb-4">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-sitemap text-primary"></i> End-to-End Predictive Intelligence Flow</h3>
+            </div>
+            <div class="panel-body">
+                <div class="p-3 bg-light rounded-3 font-monospace small text-dark border">
+<pre class="mb-0 text-dark">
+PAIMANA / Project Data (Representative Demo Dataset / CSV Import)
+                        │
+                        ▼
+            Data Validation & Ingestion
+                        │
+                        ▼
+          AI/ML Risk Engine & Preprocessing
+      ┌─────────────────┴─────────────────┐
+      │                                   │
+Delay Probability (ML)            Cost Overrun Probability (ML)
+      │                                   │
+      └─────────────────┬─────────────────┘
+                        ▼
+          Overall Project Health Score (0-100)
+             & Risk Level Classification
+                        │
+                        ▼
+        Explainable AI & Root-Cause Engine
+          (Quantified Factor Importance)
+                        │
+                        ▼
+           Early Warning Alert Service
+      (Progress Gap, Cost Escalation, Milestones)
+                        │
+                        ▼
+       Intervention Recommendation Engine
+    (Targeted Action Items mapped to Bottlenecks)
+                        │
+                        ▼
+  Government Officer Command Center & Decision Support
+</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expected Impact -->
+        <div class="card border-0 shadow-sm rounded-3 p-4 bg-white mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-line text-success me-2"></i> Measurable Strategic Impact</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="d-flex gap-3">
+                        <i class="fa-solid fa-check text-success fs-5 mt-1"></i>
+                        <div>
+                            <strong>Early Risk Detection:</strong>
+                            <p class="small text-secondary mb-0">Identifies emerging project slippages 6–12 months before milestone deadlines fail.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-3">
+                        <i class="fa-solid fa-check text-success fs-5 mt-1"></i>
+                        <div>
+                            <strong>Targeted Officer Interventions:</strong>
+                            <p class="small text-secondary mb-0">Replaces generic progress reports with concrete recommendations for land, clearances, and contractors.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-3">
+                        <i class="fa-solid fa-check text-success fs-5 mt-1"></i>
+                        <div>
+                            <strong>Counterfactual Testing:</strong>
+                            <p class="small text-secondary mb-0">What-If simulator empowers decision-makers to evaluate mitigation plans prior to budget sanction.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-3">
+                        <i class="fa-solid fa-check text-success fs-5 mt-1"></i>
+                        <div>
+                            <strong>Grounded AI Assistant:</strong>
+                            <p class="small text-secondary mb-0">Eliminates hallucination risks by anchoring all queries in verified database records.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,642 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.project_name }} — Project Intelligence{% endblock %}
+{% block header_title %}{{ project.project_name }}{% endblock %}
+{% block breadcrumb %}{{ project.project_code }} | {{ project.ministry }} | {{ project.sector }} | {{ project.state }}{% endblock %}
+
+{% block content %}
+<!-- Project Overview Header Card -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <div class="small fw-bold text-uppercase text-primary letter-spacing-1 mb-1">
+                    <i class="fa-solid fa-microchip me-1"></i> PROJECT INTELLIGENCE PROFILE
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-dark font-monospace fs-6">{{ project.project_code }}</span>
+                    <span class="badge-risk badge-risk-{{ project.risk_level|lower }} fs-6">
+                        {% if project.risk_level == 'LOW' %}🟢 LOW RISK
+                        {% elif project.risk_level == 'MEDIUM' %}🟡 MEDIUM RISK
+                        {% elif project.risk_level == 'HIGH' %}🟠 HIGH RISK
+                        {% else %}🔴 CRITICAL RISK{% endif %}
+                    </span>
+                    <span class="badge bg-secondary-subtle text-secondary border">{{ project.project_status }}</span>
+                    <span class="badge bg-light text-secondary border"><i class="fa-solid fa-circle-dot text-success me-1"></i> Observed Ground Metrics</span>
+                </div>
+                <h2 class="fw-bold text-dark mb-1">{{ project.project_name }}</h2>
+                <div class="text-muted small">
+                    <i class="fa-solid fa-building-columns me-1"></i> <strong>{{ project.ministry }}</strong> &bull; 
+                    <i class="fa-solid fa-industry ms-2 me-1"></i> {{ project.sector }} &bull;
+                    <i class="fa-solid fa-location-dot ms-2 me-1"></i> {{ project.location or project.state }} &bull;
+                    <i class="fa-solid fa-helmet-safety ms-2 me-1"></i> Agency: {{ project.implementing_agency }}
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('simulator.index', project_id=project.id) }}" class="btn btn-primary btn-sm px-3 shadow-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Run What-If Simulation
+                </a>
+                {% if current_user.can_access_project(project.id, write=True) %}
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#quickUpdateModal">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Update Status
+                </button>
+                {% endif %}
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-outline-dark btn-sm">
+                    <i class="fa-solid fa-gear me-1"></i> Edit
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key AI Risk & Health Score Cards -->
+<div class="row g-3 mb-4">
+    <!-- Health Score -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-4 h-100 text-center bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small text-muted text-uppercase fw-bold">Overall Project Health Score</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Model Inference</span>
+            </div>
+            <div class="d-inline-flex align-items-center justify-content-center mx-auto my-2 rounded-circle border border-4 {% if project.health_score >= 70 %}border-success text-success{% elif project.health_score >= 45 %}border-warning text-warning-emphasis{% else %}border-danger text-danger{% endif %}" style="width: 120px; height: 120px;">
+                <div class="text-center">
+                    <div class="fs-1 fw-bold lh-1">{{ project.health_score|round(0)|int }}</div>
+                    <div class="small text-muted" style="font-size: 0.72rem;">/ 100</div>
+                </div>
+            </div>
+            <div class="small fw-semibold mt-2 {% if project.health_score >= 70 %}text-success{% elif project.health_score >= 45 %}text-warning-emphasis{% else %}text-danger{% endif %}">
+                Overall Risk Score: {{ project.risk_score }}/100
+            </div>
+            <hr class="my-3 text-muted">
+            <!-- Health Breakdown -->
+            <div class="row g-2 text-start small">
+                <div class="col-6">
+                    <span class="text-muted">Schedule Health:</span>
+                    <strong class="float-end">{{ eval_result.health_breakdown.schedule_health }}</strong>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted">Financial Health:</span>
+                    <strong class="float-end">{{ eval_result.health_breakdown.financial_health }}</strong>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted">Physical Progress:</span>
+                    <strong class="float-end">{{ eval_result.health_breakdown.physical_health }}</strong>
+                </div>
+                <div class="col-6">
+                    <span class="text-muted">Milestone Delivery:</span>
+                    <strong class="float-end">{{ eval_result.health_breakdown.milestone_health }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delay Risk Gauge -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted text-uppercase fw-bold">Schedule Overrun Risk</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Model Inference</span>
+                </div>
+                <div class="fs-1 fw-bold {% if project.delay_probability >= 70 %}text-danger{% elif project.delay_probability >= 40 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                    {{ project.delay_probability }}%
+                </div>
+                <p class="small text-muted mb-3">
+                    Estimated probability of significant time overrun breaching baseline completion date.
+                </p>
+            </div>
+            <div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar {% if project.delay_probability >= 70 %}bg-danger{% elif project.delay_probability >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ project.delay_probability }}%;"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-2">
+                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Delay: <strong>{{ project.delay_days }} days</strong></span>
+                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Progress Lag: <strong>{{ project.progress_gap }}%</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Overrun Risk Gauge -->
+    <div class="col-lg-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small text-muted text-uppercase fw-bold">Cost Overrun Risk</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Model Inference</span>
+                </div>
+                <div class="fs-1 fw-bold {% if project.cost_overrun_probability >= 70 %}text-danger{% elif project.cost_overrun_probability >= 40 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                    {{ project.cost_overrun_probability }}%
+                </div>
+                <p class="small text-muted mb-3">
+                    Estimated probability of financial overrun requiring revised administrative sanction.
+                </p>
+            </div>
+            <div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar {% if project.cost_overrun_probability >= 70 %}bg-danger{% elif project.cost_overrun_probability >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ project.cost_overrun_probability }}%;"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mt-2">
+                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Cost Escalation: <strong>+{{ project.cost_escalation }}%</strong></span>
+                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Variance: <strong>+{{ project.cost_escalation_amount|inr }}</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= PROJECT RISK DNA (8-DIMENSION GROUNDED VISUALIZATION) ================= -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <div class="p-2 bg-primary-subtle text-primary rounded-circle">
+                <i class="fa-solid fa-dna"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-0 text-dark">Project Risk DNA &bull; Multi-Dimensional Diagnostic</h5>
+                <div class="small text-muted">Comprehensive 8-vector risk fingerprint deterministically computed from ground project indicators</div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary-subtle text-secondary border"><i class="fa-solid fa-circle-dot text-primary me-1"></i> Observed Indicator</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa-solid fa-calculator me-1"></i> Deterministic DNA Engine</span>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-4 align-items-center">
+            <!-- Radar Chart Column -->
+            <div class="col-lg-5 col-md-6 text-center">
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="riskDnaRadarChart"></canvas>
+                </div>
+                <div class="mt-2 small text-muted">
+                    Overall DNA Risk Index: <strong class="text-dark">{{ risk_dna.average_dna_score }}/100</strong> &bull; Highest Stress: <strong class="text-danger">{{ risk_dna.highest_risk.name }} ({{ risk_dna.highest_risk.score }}%)</strong>
+                </div>
+            </div>
+
+            <!-- 8-Vector Breakdown Grid -->
+            <div class="col-lg-7 col-md-6">
+                <div class="row g-3">
+                    {% for dim in risk_dna.dimensions %}
+                    <div class="col-sm-6">
+                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark small">{{ dim.name }}</span>
+                                <span class="badge bg-{{ dim.color }}-subtle text-{{ dim.color }} border border-{{ dim.color }}-subtle font-monospace" style="font-size: 0.72rem;">
+                                    {{ dim.score }}% &bull; {{ dim.tier }}
+                                </span>
+                            </div>
+                            <div class="progress my-2" style="height: 6px;">
+                                <div class="progress-bar bg-{{ dim.color }}" style="width: {{ dim.score }}%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                                <span class="text-muted text-truncate">{{ dim.detail }}</span>
+                                <span class="badge bg-white text-secondary border px-1" style="font-size: 0.65rem;">Observed</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Explainable AI & Root-Cause Analysis (Most Important Feature) -->
+<div class="row g-4 mb-4">
+    <!-- Major Risk Contributors (Bar Breakdown) -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-magnifying-glass-chart text-primary"></i> Explainable Risk Factors</h3>
+                <span class="badge bg-light text-secondary border">Feature Attribution</span>
+            </div>
+            <div class="panel-body">
+                <p class="small text-muted mb-3">
+                    Decomposition of observed project indicators contributing to the predictive risk score:
+                </p>
+
+                {% for factor, score in eval_result.contributing_factors.items() %}
+                <div class="factor-row">
+                    <div class="factor-header">
+                        <span>{{ factor }}</span>
+                        <span class="{% if score >= 70 %}text-danger fw-bold{% elif score >= 40 %}text-warning-emphasis fw-semibold{% else %}text-muted{% endif %}">
+                            {{ score }}%
+                        </span>
+                    </div>
+                    <div class="factor-bar">
+                        <div class="factor-progress {% if score >= 70 %}bg-danger{% elif score >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ score }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Natural Language Explanation Narrative -->
+                <div class="p-3 bg-light rounded-3 border mt-4">
+                    <div class="small fw-bold text-dark text-uppercase mb-1">
+                        <i class="fa-solid fa-comment-dots text-primary me-1"></i> AI Intelligence Narrative:
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        {{ eval_result.explanation }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cautious Root Cause Analysis -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-stethoscope text-primary"></i> Root-Cause Bottleneck Audit</h3>
+                <span class="badge bg-light text-secondary border">Diagnostic Evidence</span>
+            </div>
+            <div class="panel-body">
+                {% if eval_result.root_causes %}
+                    <div class="list-group list-group-flush">
+                        {% for rc in eval_result.root_causes %}
+                        <div class="list-group-item px-0 py-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold text-dark">{{ rc.factor }}</span>
+                                <span class="badge {% if rc.severity == 'CRITICAL' %}bg-danger{% elif rc.severity == 'HIGH' %}bg-orange text-white{% else %}bg-warning text-dark{% endif %}">
+                                    {{ rc.status }}
+                                </span>
+                            </div>
+                            <div class="small text-secondary">
+                                <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> {{ rc.description }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-circle-check fs-1 text-success mb-2"></i>
+                        <div>No severe execution bottlenecks detected. Land acquisition, clearances, and contractors are performing within baseline thresholds.</div>
+                    </div>
+                {% endif %}
+
+                <!-- Dependencies Status Strip -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="small fw-bold text-uppercase text-muted mb-2">Statutory & Resource Clearances</div>
+                    <div class="row g-2 text-center small">
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-light">
+                                <div class="text-muted" style="font-size: 0.7rem;">Contractor</div>
+                                <strong class="{% if project.contractor_status in ['Delayed', 'Critical'] %}text-danger{% else %}text-success{% endif %}">{{ project.contractor_status }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-light">
+                                <div class="text-muted" style="font-size: 0.7rem;">Land Acq.</div>
+                                <strong class="{% if project.land_acquisition_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.land_acquisition_status }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-light">
+                                <div class="text-muted" style="font-size: 0.7rem;">Env Clearance</div>
+                                <strong class="{% if project.environmental_clearance_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.environmental_clearance_status }}</strong>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-light">
+                                <div class="text-muted" style="font-size: 0.7rem;">Utilities</div>
+                                <strong class="{% if project.utility_shifting_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.utility_shifting_status }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial & Physical Metrics Grid -->
+<div class="row g-4 mb-4">
+    <!-- Financial Table -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-indian-rupee-sign text-primary"></i> Financial Progress & Outlay</h3>
+            </div>
+            <div class="panel-body p-0">
+                <table class="gov-table">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted">Approved Baseline Cost</td>
+                            <td class="fw-bold text-end">{{ project.approved_cost|inr }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Revised Anticipated Cost</td>
+                            <td class="fw-bold text-end {% if project.cost_escalation > 0 %}text-danger{% endif %}">{{ project.revised_cost|inr }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Cost Escalation</td>
+                            <td class="fw-bold text-end {% if project.cost_escalation > 0 %}text-danger{% else %}text-success{% endif %}">
+                                +{{ project.cost_escalation }}% (+{{ project.cost_escalation_amount|inr }})
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Cumulative Expenditure</td>
+                            <td class="fw-bold text-end text-primary">{{ project.expenditure|inr }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Budget Utilization</td>
+                            <td class="fw-bold text-end">{{ project.budget_utilization }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule & Physical Progress -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-calendar-days text-primary"></i> Schedule & Execution Timelines</h3>
+            </div>
+            <div class="panel-body p-0">
+                <table class="gov-table">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted">Physical Progress (Actual vs Target)</td>
+                            <td class="fw-bold text-end">
+                                {{ project.physical_progress }}% / {{ project.planned_progress }}%
+                                {% if project.progress_gap > 0 %}
+                                <span class="text-danger small ms-1">(-{{ project.progress_gap }}%)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Project Sanction Date</td>
+                            <td class="text-end text-dark">{{ project.start_date or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Original Targeted Completion</td>
+                            <td class="text-end text-dark">{{ project.original_completion_date or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Revised Completion Date</td>
+                            <td class="text-end fw-semibold text-danger">{{ project.revised_completion_date or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Predicted Completion Date</td>
+                            <td class="text-end fw-semibold text-primary">{{ project.predicted_completion_date or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Cumulative Schedule Delay</td>
+                            <td class="text-end fw-bold {% if project.delay_days > 60 %}text-danger{% else %}text-muted{% endif %}">{{ project.delay_days }} Days</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Milestones Timeline & Recommended Interventions -->
+<div class="row g-4 mb-4">
+    <!-- Milestone Timeline -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-flag-checkered text-primary"></i> Critical Path Milestones</h3>
+                <span class="small text-muted">{{ project.milestones_completed }}/{{ project.milestones_total }} Completed ({{ project.milestones_delayed }} Delayed)</span>
+            </div>
+            <div class="panel-body">
+                <div class="milestone-timeline">
+                    {% for m in project.milestones %}
+                    <div class="timeline-item {% if m.status == 'Completed' %}completed{% elif m.status == 'Delayed' %}delayed{% else %}in-progress{% endif %}">
+                        <div class="timeline-marker">
+                            <i class="fa-solid {% if m.status == 'Completed' %}fa-check{% elif m.status == 'Delayed' %}fa-exclamation{% else %}fa-spinner{% endif %}"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-bold mb-1 text-dark">{{ m.name }}</h6>
+                                <div class="small text-muted">
+                                    Target: {{ m.target_date }} &bull; Revised: {{ m.revised_date }}
+                                </div>
+                                <div class="small text-muted">Dependencies: {{ m.dependencies }}</div>
+                            </div>
+                            <span class="badge {% if m.status == 'Completed' %}bg-success{% elif m.status == 'Delayed' %}bg-danger{% else %}bg-primary{% endif %}">
+                                {{ m.status }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Targeted Intervention Recommendations -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-lightbulb text-warning"></i> Recommended Interventions</h3>
+                <span class="badge bg-light text-secondary border">Action Items</span>
+            </div>
+            <div class="panel-body">
+                <div class="list-group list-group-flush">
+                    {% for r in recommendations %}
+                    <div class="list-group-item px-0 py-3 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="fw-bold text-dark"><i class="fa-solid {{ r.icon }} text-primary me-2"></i>{{ r.action }}</span>
+                            <span class="badge {% if r.priority == 'CRITICAL' %}bg-danger{% elif r.priority == 'HIGH' %}bg-orange text-white{% elif r.priority == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info text-white{% endif %}">
+                                {{ r.priority }}
+                            </span>
+                        </div>
+                        <p class="small text-secondary mb-0">
+                            {{ r.detail }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historical Risk Trend Chart -->
+<div class="dashboard-panel mb-4">
+    <div class="panel-header">
+        <h3 class="panel-title"><i class="fa-solid fa-chart-line text-primary"></i> Multi-Period Project Risk & Execution Trend</h3>
+        <span class="badge bg-light text-secondary border">Quarterly Tracking</span>
+    </div>
+    <div class="panel-body">
+        <div style="height: 280px; width: 100%;">
+            <canvas id="projectTrendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Update Modal for Monitoring Officers -->
+{% if current_user.is_officer %}
+<div class="modal fade" id="quickUpdateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('projects.quick_update', project_id=project.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Project Status: {{ project.project_code }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Actual Physical Progress (%)</label>
+                        <input type="number" step="0.1" min="0" max="100" name="physical_progress" class="form-control" value="{{ project.physical_progress }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Cumulative Expenditure (₹ Cr)</label>
+                        <input type="number" step="0.1" min="0" name="expenditure" class="form-control" value="{{ project.expenditure }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Cumulative Delay Days</label>
+                        <input type="number" min="0" name="delay_days" class="form-control" value="{{ project.delay_days }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Contractor Execution Status</label>
+                        <select name="contractor_status" class="form-select">
+                            <option value="On Track" {% if project.contractor_status == 'On Track' %}selected{% endif %}>On Track</option>
+                            <option value="Minor Delay" {% if project.contractor_status == 'Minor Delay' %}selected{% endif %}>Minor Delay</option>
+                            <option value="Delayed" {% if project.contractor_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="Critical" {% if project.contractor_status == 'Critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Land Acquisition Status</label>
+                        <select name="land_acquisition_status" class="form-select">
+                            <option value="Completed" {% if project.land_acquisition_status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="In Progress" {% if project.land_acquisition_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Delayed" {% if project.land_acquisition_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="Pending" {% if project.land_acquisition_status == 'Pending' %}selected{% endif %}>Pending</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save & Recalculate Risk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const historyData = [
+        {% for h in history %}
+        {
+            date: '{{ h.reporting_date.strftime("%b %Y") }}',
+            risk: {{ h.risk_score }},
+            progress: {{ h.physical_progress }},
+            planned: {{ h.planned_progress }}
+        },
+        {% endfor %}
+    ];
+
+    // Project Risk DNA Radar Chart
+    const dnaCanvas = document.getElementById('riskDnaRadarChart');
+    if (dnaCanvas && typeof Chart !== 'undefined') {
+        const dnaLabels = {{ risk_dna.chart_labels|tojson if risk_dna else '[]' }};
+        const dnaScores = {{ risk_dna.chart_scores|tojson if risk_dna else '[]' }};
+        new Chart(dnaCanvas.getContext('2d'), {
+            type: 'radar',
+            data: {
+                labels: dnaLabels,
+                datasets: [{
+                    label: 'Risk Vector (0-100)',
+                    data: dnaScores,
+                    fill: true,
+                    backgroundColor: 'rgba(239, 68, 68, 0.22)',
+                    borderColor: 'rgba(239, 68, 68, 0.9)',
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#ef4444',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: { stepSize: 20, backdropColor: 'transparent', font: { size: 10 } },
+                        pointLabels: { font: { size: 11, weight: 'bold' } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    const ctxTrend = document.getElementById('projectTrendChart');
+    if (ctxTrend && historyData.length > 0) {
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: historyData.map(d => d.date),
+                datasets: [
+                    {
+                        label: 'Risk Score (0-100)',
+                        data: historyData.map(d => d.risk),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        yAxisID: 'yRisk'
+                    },
+                    {
+                        label: 'Physical Progress (%)',
+                        data: historyData.map(d => d.progress),
+                        borderColor: '#10b981',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.3,
+                        yAxisID: 'yProgress'
+                    },
+                    {
+                        label: 'Planned Target (%)',
+                        data: historyData.map(d => d.planned),
+                        borderColor: '#3b82f6',
+                        fill: false,
+                        tension: 0.3,
+                        yAxisID: 'yProgress'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    yRisk: {
+                        type: 'linear',
+                        position: 'left',
+                        min: 0,
+                        max: 100,
+                        title: { display: true, text: 'Risk Score (0-100)' }
+                    },
+                    yProgress: {
+                        type: 'linear',
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        title: { display: true, text: 'Progress (%)' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

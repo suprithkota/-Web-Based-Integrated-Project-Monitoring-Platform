@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings — Administrator Console{% endblock %}
+{% block header_title %}System & Risk Configuration{% endblock %}
+{% block breadcrumb %}Platform Controls & Predictive Thresholds{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-sliders text-primary fs-5"></i>
+                    <h5 class="fw-bold mb-0">Platform Risk & Intelligence Thresholds</h5>
+                </div>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1">Administrator Privileges Enforced</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('auth.admin_settings') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Early Warning & Risk Classification Boundaries</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-danger">Critical Risk Threshold (Score $\ge$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-danger-subtle text-danger"><i class="fa-solid fa-circle-exclamation"></i></span>
+                                    <input type="number" name="critical_risk_threshold" class="form-control font-monospace" min="50" max="95" value="{{ settings.critical_risk_threshold }}" required>
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Default: 70. Projects above this score trigger Critical Red alerts.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-warning-emphasis">High Risk Threshold (Score $\ge$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-warning-subtle text-warning-emphasis"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                                    <input type="number" name="high_risk_threshold" class="form-control font-monospace" min="30" max="69" value="{{ settings.high_risk_threshold }}" required>
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Default: 45. Triggers High Amber alerts.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-primary">Medium Risk Threshold (Score $\ge$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-info-subtle text-primary"><i class="fa-solid fa-info"></i></span>
+                                    <input type="number" name="medium_risk_threshold" class="form-control font-monospace" min="10" max="39" value="{{ settings.medium_risk_threshold }}" required>
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Default: 25. Projects below 25 are categorized as Low Risk.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Session & Security Controls</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Session Timeout (Minutes)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-clock"></i></span>
+                                    <input type="number" name="session_timeout_minutes" class="form-control font-monospace" min="15" max="480" value="{{ settings.session_timeout_minutes }}" required>
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Idle session expiry window.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">API Rate Limit (Req/Min)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-gauge-high"></i></span>
+                                    <input type="number" name="rate_limit_rpm" class="form-control font-monospace" min="10" max="500" value="{{ settings.rate_limit_rpm }}" required>
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Defense against brute force & API abuse.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Failed Login Lockout</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-user-lock"></i></span>
+                                    <input type="number" name="lockout_threshold" class="form-control font-monospace" min="3" max="10" value="{{ settings.lockout_threshold }}" required>
+                                </div>
+                                <div class="form-text" style="font-size: 0.75rem;">Max failed attempts before 15m cooldown.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Platform Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Security Posture Card -->
+        <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-shield-halved text-success me-2"></i> Security Architecture State</h6>
+            </div>
+            <div class="card-body p-3">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i> CSRF Token Interceptor</span>
+                        <span class="badge bg-success">Active</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i> Role-Based Access Control</span>
+                        <span class="badge bg-success">3 Tiers</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i> Object-Level Authorization</span>
+                        <span class="badge bg-success">Enforced</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i> Rate Limiter Shield</span>
+                        <span class="badge bg-success">Enabled</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i> Audit Event Ledger</span>
+                        <span class="badge bg-success">Immutable</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <span><i class="fa-solid fa-circle-check text-success me-2"></i> Sensitive File Barrier</span>
+                        <span class="badge bg-success">Active</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div class="card border-0 shadow-sm rounded-3 bg-white">
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-2 text-dark small text-uppercase">Administrative Modules</h6>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('auth.admin_users') }}" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="fa-solid fa-users-gear me-2"></i> User Directory & Account Approvals
+                    </a>
+                    <a href="{{ url_for('auth.admin_audit_logs') }}" class="btn btn-outline-secondary btn-sm text-start">
+                        <i class="fa-solid fa-shield-halved me-2"></i> Security Audit Log Console
+                    </a>
+                    <a href="{{ url_for('data_import.index') }}" class="btn btn-outline-dark btn-sm text-start">
+                        <i class="fa-solid fa-file-import me-2"></i> Project Data Ingestion (CSV / Excel)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

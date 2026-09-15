@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}What-If Scenario Simulator — ProjectPulse AI{% endblock %}
+{% block header_title %}What-If Scenario Simulator{% endblock %}
+{% block breadcrumb %}Predictive Stress Testing & Counterfactual Analysis{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Simulation Parameters Form (Left Column) -->
+    <div class="col-lg-5">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-sliders text-primary"></i> Scenario Parameters</h3>
+                <span class="badge bg-warning text-dark">Simulated</span>
+            </div>
+            <div class="panel-body">
+                <!-- Project Selector -->
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Select Monitored Project</label>
+                    <select id="projectSelect" class="form-select form-select-sm">
+                        {% for p in projects %}
+                        <option value="{{ p.id }}" {% if selected_project and selected_project.id == p.id %}selected{% endif %}>
+                            {{ p.project_code }} — {{ p.project_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <hr class="my-3 text-muted">
+
+                <!-- Parameter Sliders -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span>Actual Physical Progress</span>
+                        <span id="progVal" class="text-primary">{{ selected_project.physical_progress if selected_project else 50 }}%</span>
+                    </div>
+                    <input type="range" class="form-range" id="progRange" min="0" max="100" step="1" value="{{ selected_project.physical_progress if selected_project else 50 }}">
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span>Cumulative Delay Days</span>
+                        <span id="delayVal" class="text-danger">{{ selected_project.delay_days if selected_project else 60 }} days</span>
+                    </div>
+                    <input type="range" class="form-range" id="delayRange" min="0" max="730" step="15" value="{{ selected_project.delay_days if selected_project else 60 }}">
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span>Delayed Milestones</span>
+                        <span id="milestoneVal" class="text-warning-emphasis">{{ selected_project.milestones_delayed if selected_project else 1 }} of {{ selected_project.milestones_total if selected_project else 4 }}</span>
+                    </div>
+                    <input type="range" class="form-range" id="milestoneRange" min="0" max="6" step="1" value="{{ selected_project.milestones_delayed if selected_project else 1 }}">
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span>Revised Budget (₹ Cr)</span>
+                        <span id="costVal" class="text-dark">₹{{ selected_project.revised_cost if selected_project else 1000 }} Cr</span>
+                    </div>
+                    <input type="range" class="form-range" id="costRange" min="{{ (selected_project.approved_cost * 0.8)|int if selected_project else 500 }}" max="{{ (selected_project.approved_cost * 2.2)|int if selected_project else 3000 }}" step="50" value="{{ selected_project.revised_cost if selected_project else 1000 }}">
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Contractor Status</label>
+                        <select id="contractorSelect" class="form-select form-select-sm">
+                            <option value="On Track" {% if selected_project and selected_project.contractor_status == 'On Track' %}selected{% endif %}>On Track</option>
+                            <option value="Minor Delay" {% if selected_project and selected_project.contractor_status == 'Minor Delay' %}selected{% endif %}>Minor Delay</option>
+                            <option value="Delayed" {% if selected_project and selected_project.contractor_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="Critical" {% if selected_project and selected_project.contractor_status == 'Critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Land Acquisition</label>
+                        <select id="landSelect" class="form-select form-select-sm">
+                            <option value="Completed" {% if selected_project and selected_project.land_acquisition_status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="In Progress" {% if selected_project and selected_project.land_acquisition_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Delayed" {% if selected_project and selected_project.land_acquisition_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="Pending" {% if selected_project and selected_project.land_acquisition_status == 'Pending' %}selected{% endif %}>Pending</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-4">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Environmental</label>
+                        <select id="envSelect" class="form-select form-select-sm">
+                            <option value="Completed" {% if selected_project and selected_project.environmental_clearance_status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="In Progress" {% if selected_project and selected_project.environmental_clearance_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Delayed" {% if selected_project and selected_project.environmental_clearance_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="Pending" {% if selected_project and selected_project.environmental_clearance_status == 'Pending' %}selected{% endif %}>Pending</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Utility Relocation</label>
+                        <select id="utilSelect" class="form-select form-select-sm">
+                            <option value="Completed" {% if selected_project and selected_project.utility_shifting_status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="In Progress" {% if selected_project and selected_project.utility_shifting_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Delayed" {% if selected_project and selected_project.utility_shifting_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                            <option value="Pending" {% if selected_project and selected_project.utility_shifting_status == 'Pending' %}selected{% endif %}>Pending</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="button" id="runSimulationBtn" class="btn btn-primary shadow-sm">
+                        <i class="fa-solid fa-play me-1"></i> Compute Simulated Impact
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparative Results View (Right Column) -->
+    <div class="col-lg-7">
+        <div class="dashboard-panel">
+            <div class="panel-header d-flex justify-content-between align-items-center">
+                <h3 class="panel-title"><i class="fa-solid fa-code-compare text-primary"></i> Baseline vs Simulated Impact</h3>
+                <span id="directionBadge" class="badge bg-secondary">Awaiting Run</span>
+            </div>
+
+            <div class="panel-body">
+                <!-- Simulation Banner Notice -->
+                <div class="alert alert-warning py-2 px-3 small border-0 d-flex align-items-center gap-2 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span><strong>Scenario Simulation — Not an official forecast.</strong> Analytical sensitivity projection for decision support.</span>
+                </div>
+
+                <!-- Side-by-side Comparative Cards -->
+                <div class="row g-3 mb-4">
+                    <!-- Current State -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-muted text-uppercase fw-bold">Baseline Current</span>
+                                <span id="currentRiskLevel" class="badge bg-secondary">...</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted small">Risk Index:</div>
+                                <div id="currentRiskScore" class="fs-2 fw-bold text-dark">--/100</div>
+                            </div>
+                            <div class="small text-secondary mb-1">
+                                Delay Probability: <strong id="currentDelayProb">--%</strong>
+                            </div>
+                            <div class="small text-secondary mb-1">
+                                Cost Overrun Risk: <strong id="currentCostProb">--%</strong>
+                            </div>
+                            <div class="small text-secondary">
+                                Health Score: <strong id="currentHealthScore">--/100</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulated State -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-white h-100 shadow-sm border-primary">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-primary text-uppercase fw-bold">Simulated Scenario</span>
+                                <span id="simulatedRiskLevel" class="badge bg-primary">...</span>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted small">Simulated Risk:</div>
+                                <div id="simulatedRiskScore" class="fs-2 fw-bold text-primary">--/100</div>
+                            </div>
+                            <div class="small text-secondary mb-1">
+                                Delay Probability: <strong id="simulatedDelayProb">--%</strong>
+                            </div>
+                            <div class="small text-secondary mb-1">
+                                Cost Overrun Risk: <strong id="simulatedCostProb">--%</strong>
+                            </div>
+                            <div class="small text-secondary">
+                                Health Score: <strong id="simulatedHealthScore">--/100</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impact Delta Breakdown -->
+                <div class="card bg-light border-0 p-3 mb-4">
+                    <h6 class="fw-bold text-dark mb-2 text-uppercase small">Projected Variance Deltas</h6>
+                    <div class="row text-center g-2 small">
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">Risk Delta</div>
+                                <div id="deltaRisk" class="fw-bold fs-6">--</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">Delay Delta</div>
+                                <div id="deltaDelay" class="fw-bold fs-6">--</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">Cost Delta</div>
+                                <div id="deltaCost" class="fw-bold fs-6">--</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">Health Delta</div>
+                                <div id="deltaHealth" class="fw-bold fs-6">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulated Analytical Explanation -->
+                <div class="p-3 border rounded-3 bg-white">
+                    <div class="small fw-bold text-dark text-uppercase mb-1">
+                        <i class="fa-solid fa-comment-dots text-primary me-1"></i> Sensitivity Analysis Narrative:
+                    </div>
+                    <p id="simulatedExplanation" class="small text-secondary mb-0">
+                        Adjust parameters and click "Compute Simulated Impact" to view counterfactual projections.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+{% endblock %}

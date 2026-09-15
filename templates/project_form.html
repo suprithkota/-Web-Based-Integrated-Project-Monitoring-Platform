@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — ProjectPulse AI{% endblock %}
+{% block header_title %}{{ title }}{% endblock %}
+{% block breadcrumb %}Infrastructure Project Registry Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="dashboard-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-pen-nib text-primary"></i> Project Parameters & Baselines</h3>
+                <a href="{{ url_for('projects.index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Registry
+                </a>
+            </div>
+            <div class="panel-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Project Code *</label>
+                            <input type="text" name="project_code" class="form-control" value="{{ project.project_code if project else '' }}" {% if project %}readonly{% endif %} required placeholder="e.g. PRJ-0099">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold">Project Name *</label>
+                            <input type="text" name="project_name" class="form-control" value="{{ project.project_name if project else '' }}" required placeholder="e.g. Western Ring Road Package-II">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ministry *</label>
+                            <input type="text" name="ministry" class="form-control" value="{{ project.ministry if project else 'Ministry of Road Transport & Highways' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Department / Division</label>
+                            <input type="text" name="department" class="form-control" value="{{ project.department if project else '' }}" placeholder="e.g. NHAI Regional Office">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Sector *</label>
+                            <select name="sector" class="form-select" required>
+                                {% for s in ['Roads', 'Railways', 'Metro', 'Power', 'Ports', 'Water', 'Urban Infrastructure', 'Airports', 'Telecommunications', 'Energy'] %}
+                                <option value="{{ s }}" {% if project and project.sector == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">State *</label>
+                            <input type="text" name="state" class="form-control" value="{{ project.state if project else '' }}" required placeholder="e.g. Maharashtra">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Location / Section</label>
+                            <input type="text" name="location" class="form-control" value="{{ project.location if project else '' }}" placeholder="e.g. Nagpur - Wardha Corridor">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Implementing Agency</label>
+                            <input type="text" name="implementing_agency" class="form-control" value="{{ project.implementing_agency if project else 'Central / State Executing Agency' }}">
+                        </div>
+
+                        <div class="col-12"><hr class="my-2"></div>
+                        <h6 class="fw-bold text-dark mb-0">Financial Parameters (₹ Crores)</h6>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Approved Baseline Cost (₹ Cr) *</label>
+                            <input type="number" step="0.1" name="approved_cost" class="form-control" value="{{ project.approved_cost if project else 1000.0 }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Revised Anticipated Cost (₹ Cr)</label>
+                            <input type="number" step="0.1" name="revised_cost" class="form-control" value="{{ project.revised_cost if project else 1000.0 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Cumulative Expenditure (₹ Cr)</label>
+                            <input type="number" step="0.1" name="expenditure" class="form-control" value="{{ project.expenditure if project else 0.0 }}">
+                        </div>
+
+                        <div class="col-12"><hr class="my-2"></div>
+                        <h6 class="fw-bold text-dark mb-0">Execution & Schedule Progress</h6>
+
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Physical Progress (%) *</label>
+                            <input type="number" step="0.1" min="0" max="100" name="physical_progress" class="form-control" value="{{ project.physical_progress if project else 0.0 }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Planned Progress (%) *</label>
+                            <input type="number" step="0.1" min="0" max="100" name="planned_progress" class="form-control" value="{{ project.planned_progress if project else 0.0 }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Schedule Delay Days</label>
+                            <input type="number" min="0" name="delay_days" class="form-control" value="{{ project.delay_days if project else 0 }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Project Status</label>
+                            <select name="project_status" class="form-select">
+                                <option value="Ongoing" {% if project and project.project_status == 'Ongoing' %}selected{% endif %}>Ongoing</option>
+                                <option value="Delayed" {% if project and project.project_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                                <option value="Completed" {% if project and project.project_status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="Stalled" {% if project and project.project_status == 'Stalled' %}selected{% endif %}>Stalled</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Total Milestones</label>
+                            <input type="number" min="1" name="milestones_total" class="form-control" value="{{ project.milestones_total if project else 4 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Completed Milestones</label>
+                            <input type="number" min="0" name="milestones_completed" class="form-control" value="{{ project.milestones_completed if project else 0 }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Delayed Milestones</label>
+                            <input type="number" min="0" name="milestones_delayed" class="form-control" value="{{ project.milestones_delayed if project else 0 }}">
+                        </div>
+
+                        <div class="col-12"><hr class="my-2"></div>
+                        <h6 class="fw-bold text-dark mb-0">Statutory Clearances & Bottlenecks</h6>
+
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Contractor Status</label>
+                            <select name="contractor_status" class="form-select">
+                                <option value="On Track" {% if project and project.contractor_status == 'On Track' %}selected{% endif %}>On Track</option>
+                                <option value="Minor Delay" {% if project and project.contractor_status == 'Minor Delay' %}selected{% endif %}>Minor Delay</option>
+                                <option value="Delayed" {% if project and project.contractor_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                                <option value="Critical" {% if project and project.contractor_status == 'Critical' %}selected{% endif %}>Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Land Acquisition</label>
+                            <select name="land_acquisition_status" class="form-select">
+                                <option value="Completed" {% if project and project.land_acquisition_status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="In Progress" {% if project and project.land_acquisition_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Delayed" {% if project and project.land_acquisition_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                                <option value="Pending" {% if project and project.land_acquisition_status == 'Pending' %}selected{% endif %}>Pending</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Environmental Clearance</label>
+                            <select name="environmental_clearance_status" class="form-select">
+                                <option value="Completed" {% if project and project.environmental_clearance_status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="In Progress" {% if project and project.environmental_clearance_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Delayed" {% if project and project.environmental_clearance_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                                <option value="Pending" {% if project and project.environmental_clearance_status == 'Pending' %}selected{% endif %}>Pending</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Utility Shifting</label>
+                            <select name="utility_shifting_status" class="form-select">
+                                <option value="Completed" {% if project and project.utility_shifting_status == 'Completed' %}selected{% endif %}>Completed</option>
+                                <option value="In Progress" {% if project and project.utility_shifting_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Delayed" {% if project and project.utility_shifting_status == 'Delayed' %}selected{% endif %}>Delayed</option>
+                                <option value="Pending" {% if project and project.utility_shifting_status == 'Pending' %}selected{% endif %}>Pending</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 mt-4 d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('projects.index') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fa-solid fa-floppy-disk me-1"></i> Save Project & Compute Risks
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

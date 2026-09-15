@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Early Warning Center — ProjectPulse AI{% endblock %}
+{% block header_title %}Early Warning Center & Triage{% endblock %}
+{% block breadcrumb %}Predictive Alerts & Intervention Recommendations{% endblock %}
+
+{% block content %}
+<!-- Alert KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-muted text-uppercase fw-bold">Active Alerts</div>
+            <div class="fs-2 fw-bold text-dark">{{ counts.active }}</div>
+            <div class="small text-muted">Awaiting or under review</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white border-start border-danger border-4">
+            <div class="small text-danger text-uppercase fw-bold">Critical Severity</div>
+            <div class="fs-2 fw-bold text-danger">{{ counts.critical }}</div>
+            <div class="small text-muted">Immediate triage required</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white border-start border-warning border-4">
+            <div class="small text-warning-emphasis text-uppercase fw-bold">High Severity</div>
+            <div class="fs-2 fw-bold text-warning-emphasis">{{ counts.high }}</div>
+            <div class="small text-muted">Elevated risk of overrun</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-secondary text-uppercase fw-bold">Medium Severity</div>
+            <div class="fs-2 fw-bold text-secondary">{{ counts.medium }}</div>
+            <div class="small text-muted">Emerging slippages</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-success text-uppercase fw-bold">Resolved</div>
+            <div class="fs-2 fw-bold text-success">{{ counts.resolved }}</div>
+            <div class="small text-muted">Interventions actioned</div>
+        </div>
+    </div>
+</div>
+
+<!-- Controls Bar -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <!-- Filter Tabs -->
+    <div class="btn-group shadow-sm">
+        <a href="{{ url_for('alerts.index', status='active', severity='') }}" class="btn btn-outline-primary btn-sm {% if current_filter.status == 'active' and not current_filter.severity %}active{% endif %}">
+            All Active ({{ counts.active }})
+        </a>
+        <a href="{{ url_for('alerts.index', status='active', severity='CRITICAL') }}" class="btn btn-outline-danger btn-sm {% if current_filter.severity == 'CRITICAL' %}active{% endif %}">
+            🔴 Critical ({{ counts.critical }})
+        </a>
+        <a href="{{ url_for('alerts.index', status='active', severity='HIGH') }}" class="btn btn-outline-warning btn-sm {% if current_filter.severity == 'HIGH' %}active{% endif %}">
+            🟠 High ({{ counts.high }})
+        </a>
+        <a href="{{ url_for('alerts.index', status='Resolved') }}" class="btn btn-outline-success btn-sm {% if current_filter.status == 'Resolved' %}active{% endif %}">
+            🟢 Resolved ({{ counts.resolved }})
+        </a>
+    </div>
+
+    <!-- Actions -->
+    {% if current_user.is_officer %}
+    <form method="POST" action="{{ url_for('alerts.refresh_alerts') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary btn-sm shadow-sm">
+            <i class="fa-solid fa-radar me-1"></i> Scan & Refresh Alerts
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Alerts Feed -->
+<div class="row g-3">
+    {% for a in alerts %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+            <div class="card-header d-flex justify-content-between align-items-center py-2 px-3 {% if a.severity == 'CRITICAL' %}bg-danger text-white{% elif a.severity == 'HIGH' %}bg-orange text-white{% elif a.severity == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info text-white{% endif %}">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <strong class="text-uppercase" style="letter-spacing: 0.05em; font-size: 0.8rem;">
+                        {{ a.severity }} PRIORITY ALERT &bull; TRIGGER: {{ a.trigger }}
+                    </strong>
+                </div>
+                <div class="d-flex align-items-center gap-2 small">
+                    <span><i class="fa-regular fa-clock me-1"></i>{{ a.created_at.strftime('%d %b %Y, %H:%M') if a.created_at else '' }}</span>
+                    <span class="badge bg-light text-dark">{{ a.status }}</span>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-secondary font-monospace">{{ a.project.project_code }}</span>
+                            <a href="{{ url_for('projects.detail', project_id=a.project_id) }}" class="fw-bold text-primary fs-5 text-decoration-none">
+                                {{ a.project.project_name }}
+                            </a>
+                        </div>
+                        <div class="small text-muted mb-3">
+                            {{ a.project.ministry }} &bull; {{ a.project.sector }} &bull; {{ a.project.state }}
+                        </div>
+
+                        <h6 class="fw-bold text-dark mb-1">{{ a.title }}</h6>
+                        <p class="text-secondary small mb-3">{{ a.description }}</p>
+
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="small fw-bold text-dark mb-1 text-uppercase">
+                                <i class="fa-solid fa-hand-holding-medical text-primary me-1"></i> Recommended Intervention:
+                            </div>
+                            <div class="small text-secondary fw-medium">
+                                {{ a.recommendation }}
+                            </div>
+                        </div>
+
+                        {% if a.notes %}
+                        <div class="mt-2 p-2 bg-warning-subtle text-dark rounded border small">
+                            <strong><i class="fa-solid fa-clipboard-check me-1"></i> Triage Notes:</strong>
+                            <pre class="mb-0 mt-1 small font-monospace" style="white-space: pre-wrap;">{{ a.notes }}</pre>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-lg-4 border-start-lg ps-lg-4 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="small text-muted text-uppercase fw-bold mb-1">Estimated Risk Probability</div>
+                            <div class="fs-2 fw-bold {% if a.probability >= 75 %}text-danger{% elif a.probability >= 50 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                                {{ a.probability|round(1) }}%
+                            </div>
+
+                            <div class="small text-muted mt-2">
+                                <strong>Contributing Factors:</strong>
+                                <div class="text-secondary mt-1">{{ a.contributing_factors }}</div>
+                            </div>
+                        </div>
+
+                        {% if current_user.is_officer %}
+                        <div class="mt-4 pt-3 border-top">
+                            <form method="POST" action="{{ url_for('alerts.change_status', alert_id=a.id) }}" class="d-flex flex-column gap-2">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="input-group input-group-sm">
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option value="Open" {% if a.status == 'Open' %}selected{% endif %}>Mark as Open</option>
+                                        <option value="Under Review" {% if a.status == 'Under Review' %}selected{% endif %}>Mark Under Review</option>
+                                        <option value="Resolved" {% if a.status == 'Resolved' %}selected{% endif %}>Mark as Resolved</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Update</button>
+                                </div>
+                                <input type="text" name="notes" class="form-control form-control-sm" placeholder="Optional resolution note...">
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 text-muted bg-white rounded-3 shadow-sm">
+        <i class="fa-solid fa-shield-check fs-1 text-success mb-3"></i>
+        <h5>No Alerts Matching Selection</h5>
+        <p class="small text-muted">All project metrics within specified filter parameters are currently operating within tolerance.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

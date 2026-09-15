@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Geospatial Infrastructure Map — ProjectPulse AI{% endblock %}
+{% block header_title %}Geospatial Infrastructure Intelligence Map{% endblock %}
+{% block breadcrumb %}All-India Geographic Risk Distribution & Cluster Monitoring{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="dashboard-panel">
+            <div class="panel-header d-flex justify-content-between align-items-center">
+                <h3 class="panel-title"><i class="fa-solid fa-map-location-dot text-primary"></i> India Infrastructure Map</h3>
+                <div class="d-flex align-items-center gap-3 small">
+                    <span><i class="fa-solid fa-circle text-success me-1"></i> Low Risk</span>
+                    <span><i class="fa-solid fa-circle text-warning me-1"></i> Medium</span>
+                    <span><i class="fa-solid fa-circle text-orange me-1"></i> High</span>
+                    <span><i class="fa-solid fa-circle text-danger me-1"></i> Critical</span>
+                </div>
+            </div>
+            <div class="panel-body p-0">
+                <div id="india-map"></div>
+            </div>
+            <div class="p-3 bg-light border-top small text-muted d-flex justify-content-between">
+                <span>Click any marker to view real-time risk indicators and progress metrics.</span>
+                <span>Coordinates: Project specific / State cluster centroids.</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

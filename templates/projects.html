@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Projects Registry — ProjectPulse AI{% endblock %}
+{% block header_title %}National Infrastructure Projects Registry{% endblock %}
+{% block breadcrumb %}Monitored Capital Works Portfolio{% endblock %}
+
+{% block content %}
+<!-- Search & Filter Controls -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('projects.index') }}" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search by name, code, city..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="ministry" class="form-select form-select-sm">
+                    <option value="">All Ministries</option>
+                    {% for m in ministries %}
+                    <option value="{{ m }}" {% if active_filters.ministry == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="sector" class="form-select form-select-sm">
+                    <option value="">All Sectors</option>
+                    {% for s in sectors %}
+                    <option value="{{ s }}" {% if active_filters.sector == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="risk_level" class="form-select form-select-sm">
+                    <option value="">All Risk Levels</option>
+                    <option value="CRITICAL" {% if active_filters.risk_level == 'CRITICAL' %}selected{% endif %}>🔴 Critical</option>
+                    <option value="HIGH" {% if active_filters.risk_level == 'HIGH' %}selected{% endif %}>🟠 High</option>
+                    <option value="MEDIUM" {% if active_filters.risk_level == 'MEDIUM' %}selected{% endif %}>🟡 Medium</option>
+                    <option value="LOW" {% if active_filters.risk_level == 'LOW' %}selected{% endif %}>🟢 Low</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                    <i class="fa-solid fa-filter me-1"></i> Filter
+                </button>
+                <a href="{{ url_for('projects.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+                {% if current_user.is_admin or current_user.role == 'officer' %}
+                <a href="{{ url_for('projects.export_projects') }}" class="btn btn-outline-primary btn-sm text-nowrap" title="Export Authorized Safe CSV">
+                    <i class="fa-solid fa-file-csv me-1"></i> Export
+                </a>
+                <a href="{{ url_for('projects.create_project') }}" class="btn btn-success btn-sm text-nowrap">
+                    <i class="fa-solid fa-plus me-1"></i> Add
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if current_user.role == 'officer' %}
+<div class="alert alert-info py-2 px-3 small d-flex justify-content-between align-items-center mb-3 rounded-3 shadow-sm border-info-subtle">
+    <span><i class="fa-solid fa-user-shield me-2 text-primary"></i> <strong>Monitoring Officer Scope:</strong> Displaying project records assigned to your operational monitoring purview.</span>
+    <span class="badge bg-primary rounded-pill px-3">{{ pagination.total }} Assigned Projects</span>
+</div>
+{% elif current_user.role == 'viewer' %}
+<div class="alert alert-secondary py-2 px-3 small d-flex justify-content-between align-items-center mb-3 rounded-3 shadow-sm border-secondary-subtle">
+    <span><i class="fa-solid fa-eye me-2 text-secondary"></i> <strong>Viewer Mode:</strong> Read-only access to infrastructure analytics. Record additions, modifications, and exports are restricted by backend RBAC.</span>
+    <span class="badge bg-secondary rounded-pill px-3">Read-Only</span>
+</div>
+{% endif %}
+
+<!-- Table Card -->
+<div class="dashboard-panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-list-check text-primary"></i> Projects Registry</h3>
+            <div class="small text-muted">Showing {{ projects|length }} records (Page {{ pagination.page }} of {{ pagination.pages or 1 }})</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="small text-muted">Sort by:</span>
+            <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('projects.index', search=search, ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level, sort_by='risk_score', sort_order='desc') }}" class="btn btn-outline-secondary {% if active_filters.sort_by == 'risk_score' %}active{% endif %}">
+                    Risk Score
+                </a>
+                <a href="{{ url_for('projects.index', search=search, ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level, sort_by='delay_probability', sort_order='desc') }}" class="btn btn-outline-secondary {% if active_filters.sort_by == 'delay_probability' %}active{% endif %}">
+                    Delay Risk
+                </a>
+                <a href="{{ url_for('projects.index', search=search, ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level, sort_by='approved_cost', sort_order='desc') }}" class="btn btn-outline-secondary {% if active_filters.sort_by == 'approved_cost' %}active{% endif %}">
+                    Budget Outlay
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-body p-0">
+        <div class="table-responsive">
+            <table class="gov-table table-hover">
+                <thead>
+                    <tr>
+                        <th>Project & Code</th>
+                        <th>Ministry / Sector</th>
+                        <th>State</th>
+                        <th>Outlay & Spend</th>
+                        <th>Physical Progress</th>
+                        <th>Delay Risk</th>
+                        <th>Cost Risk</th>
+                        <th>Overall Risk</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in projects %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-semibold text-primary text-decoration-none d-block text-truncate" style="max-width: 250px;">
+                                {{ p.project_name }}
+                            </a>
+                            <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.7rem;">{{ p.project_code }}</span>
+                            <span class="small text-muted ms-1"><i class="fa-solid fa-location-dot me-1"></i>{{ p.location or p.state }}</span>
+                        </td>
+                        <td>
+                            <div class="text-dark small fw-medium text-truncate" style="max-width: 170px;">{{ p.ministry }}</div>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.7rem;">{{ p.sector }}</span>
+                        </td>
+                        <td class="small fw-medium text-muted">
+                            {{ p.state }}
+                        </td>
+                        <td>
+                            <div class="small fw-bold text-dark">{{ p.approved_cost|inr }}</div>
+                            <div class="small text-muted" style="font-size: 0.75rem;">Spent: {{ p.expenditure|inr }} ({{ p.budget_utilization }}%)</div>
+                        </td>
+                        <td style="min-width: 120px;">
+                            <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                <span>{{ p.physical_progress }}%</span>
+                                <span class="text-muted" style="font-size: 0.72rem;">Plan: {{ p.planned_progress }}%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar {% if p.progress_gap > 15 %}bg-danger{% elif p.progress_gap > 5 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ p.physical_progress }}%;"></div>
+                            </div>
+                            {% if p.progress_gap > 0 %}
+                            <div class="small text-danger mt-1" style="font-size: 0.7rem;">
+                                Lag: -{{ p.progress_gap }}%
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold {% if p.delay_probability >= 75 %}text-danger{% elif p.delay_probability >= 50 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                                {{ p.delay_probability }}%
+                            </div>
+                            <div class="small text-muted" style="font-size: 0.7rem;">{{ p.delay_days }}d delay</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold {% if p.cost_overrun_probability >= 75 %}text-danger{% elif p.cost_overrun_probability >= 50 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                                {{ p.cost_overrun_probability }}%
+                            </div>
+                            {% if p.cost_escalation > 0 %}
+                            <div class="small text-danger" style="font-size: 0.7rem;">+{{ p.cost_escalation }}%</div>
+                            {% else %}
+                            <div class="small text-muted" style="font-size: 0.7rem;">On budget</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge-risk badge-risk-{{ p.risk_level|lower }}">
+                                {% if p.risk_level == 'LOW' %}🟢 LOW
+                                {% elif p.risk_level == 'MEDIUM' %}🟡 MEDIUM
+                                {% elif p.risk_level == 'HIGH' %}🟠 HIGH
+                                {% else %}🔴 CRITICAL{% endif %}
+                            </span>
+                            <div class="small text-muted text-center mt-1" style="font-size: 0.7rem;">
+                                Score: {{ p.risk_score }}/100
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if p.project_status == 'Ongoing' %}bg-primary-subtle text-primary border border-primary-subtle{% elif p.project_status == 'Completed' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                                {{ p.project_status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="btn btn-sm btn-outline-primary" title="View Project Intelligence">
+                                <i class="fa-solid fa-chart-pie me-1"></i> Intel
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i>
+                            <div>No infrastructure projects found matching the specified filters.</div>
+                            <a href="{{ url_for('projects.index') }}" class="btn btn-sm btn-outline-secondary mt-2">Reset Filters</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center">
+            <div class="small text-muted">
+                Showing page {{ pagination.page }} of {{ pagination.pages }}
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('projects.index', page=pagination.prev_num, search=search, ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level, sort_by=active_filters.sort_by, sort_order=active_filters.sort_order) }}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('projects.index', page=page_num, search=search, ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level, sort_by=active_filters.sort_by, sort_order=active_filters.sort_order) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('projects.index', page=pagination.next_num, search=search, ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level, sort_by=active_filters.sort_by, sort_order=active_filters.sort_order) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

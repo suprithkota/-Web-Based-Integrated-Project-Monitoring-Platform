@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Email Verification — ProjectPulse AI{% endblock %}
+{% block header_title %}Official Email Verification{% endblock %}
+{% block breadcrumb %}Identity Assurance & Account Lifecycle{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-4">
+    <div class="col-xl-5 col-lg-6 col-md-8 col-11" style="max-width: 530px;">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="bg-primary text-white p-4 text-center" style="background: linear-gradient(135deg, #0d1b2a, #1d3557) !important;">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white text-primary rounded-circle mb-3 shadow" style="width: 64px; height: 64px;">
+                    <i class="fa-solid fa-envelope-circle-check fs-2" style="color: #1d3557;"></i>
+                </div>
+                <h3 class="fw-bold mb-1">ProjectPulse AI</h3>
+                <p class="small text-light opacity-75 mb-0">Identity & Email Verification Gateway</p>
+                <div class="badge bg-warning text-dark mt-2 fw-semibold px-3 py-1">SIH26103 Prototype</div>
+            </div>
+
+            <div class="card-body p-4 p-md-5 bg-white text-center">
+                {% if success %}
+                    <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                        <i class="fa-solid fa-circle-check fs-1"></i>
+                    </div>
+
+                    {% if status == 'pending_approval' %}
+                        <h4 class="fw-bold text-dark mb-2">Email Verified — Awaiting Admin Approval</h4>
+                        <div class="alert alert-warning border-0 py-3 px-4 mb-4 rounded-3 text-start small" style="background-color: #fefce8; color: #854d0e;">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="fa-solid fa-hourglass-half fs-5 mt-1 text-warning"></i>
+                                <div>
+                                    <strong>Email verification successful!</strong>
+                                    <p class="mb-0 mt-1">Because you registered as a <strong>Monitoring Officer</strong>, your account requires authorization from an administrator before login privileges are granted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <h4 class="fw-bold text-dark mb-2">Email Verified Successfully!</h4>
+                        <div class="alert alert-success border-0 py-3 px-4 mb-4 rounded-3 text-center" style="background-color: #ecfdf5; color: #065f46;">
+                            <i class="fa-solid fa-circle-check me-1"></i>
+                            <strong>Your email is verified and your account is active. You can now sign in.</strong>
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary py-2 fw-semibold shadow-sm" style="background-color: #1d3557; border-color: #1d3557;">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Go to Sign In
+                        </a>
+                    </div>
+
+                {% elif expired %}
+                    <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-circle mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                        <i class="fa-solid fa-clock-rotate-left fs-1 text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-2">Verification Link Expired</h4>
+                    <p class="text-secondary small mb-4">Verification links are time-limited for security and expire after 24 hours.</p>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auth.resend_verification', email=email) }}" class="btn btn-primary py-2 fw-semibold" style="background-color: #1d3557; border-color: #1d3557;">
+                            <i class="fa-solid fa-rotate me-2"></i> Request New Verification Email
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary py-2">
+                            Return to Sign In
+                        </a>
+                    </div>
+
+                {% else %}
+                    <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                        <i class="fa-solid fa-triangle-exclamation fs-1"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-2">Invalid or Used Verification Link</h4>
+                    <p class="text-secondary small mb-4">This verification link is invalid, malformed, or has already been used.</p>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary py-2 fw-semibold" style="background-color: #1d3557; border-color: #1d3557;">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Go to Sign In
+                        </a>
+                        <a href="{{ url_for('auth.resend_verification') }}" class="btn btn-outline-secondary py-2">
+                            Resend Verification Email
+                        </a>
+                    </div>
+                {% endif %}
+
+                <!-- Exact Disclaimer -->
+                <div class="alert alert-info py-2 px-3 mt-4 mb-0 small border-0 text-center rounded-3" style="background-color: #f0f7ff; color: #1e40af;">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    <strong>Representative Demo Dataset — Not official government data.</strong>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light p-3 text-center small text-muted border-top">
+                <i class="fa-solid fa-shield-halved text-success me-1"></i>
+                Authorized Government Infrastructure Decision Support System
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

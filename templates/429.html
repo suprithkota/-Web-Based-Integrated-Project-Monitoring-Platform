@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}429 Rate Limit Exceeded — ProjectPulse AI{% endblock %}
+{% block header_title %}Request Threshold Reached{% endblock %}
+{% block breadcrumb %}Security Throttling / Rate Limit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="display-1 fw-bold text-danger mb-3">429</div>
+        <h3 class="fw-bold text-dark mb-2">Too Many Requests</h3>
+        <p class="text-secondary mb-4">
+            {{ error_message or "You have sent too many requests in a short interval. Rate limiting is active to protect official platform stability." }}
+        </p>
+        <div class="alert alert-warning py-2 px-3 small d-inline-block mb-4">
+            <i class="fa-solid fa-clock me-1"></i> Please wait 60 seconds before making another request.
+        </div>
+        <div>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary px-4">
+                <i class="fa-solid fa-house me-1"></i> Return to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

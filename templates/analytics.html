@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Analytics & Trends — ProjectPulse AI{% endblock %}
+{% block header_title %}Comparative & Trend Analytics{% endblock %}
+{% block breadcrumb %}Portfolio Performance, Outlays, and Predictive Diagnostics{% endblock %}
+
+{% block content %}
+<!-- Quick Summary Strip -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-muted text-uppercase fw-bold">Portfolio Health</div>
+            <div class="fs-3 fw-bold text-success">{{ kpis.avg_health_score }} / 100</div>
+            <div class="small text-muted">Across {{ kpis.total_projects }} monitored projects</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-muted text-uppercase fw-bold">Capital Escalation</div>
+            <div class="fs-3 fw-bold text-danger">+{{ kpis.total_cost_escalation_pct }}%</div>
+            <div class="small text-danger">+{{ kpis.total_cost_escalation|inr }} variance</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-muted text-uppercase fw-bold">Average Schedule Delay</div>
+            <div class="fs-3 fw-bold text-warning-emphasis">{{ kpis.avg_delay_days|int }} Days</div>
+            <div class="small text-muted">Average progress lag: {{ kpis.avg_progress_gap }}%</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-muted text-uppercase fw-bold">Budget Utilization</div>
+            <div class="fs-3 fw-bold text-primary">{{ kpis.expenditure_utilization_pct }}%</div>
+            <div class="small text-muted">{{ kpis.total_expenditure|inr }} disbursed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Ministry & Sector Comparison Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-building-columns text-primary"></i> Ministry Risk & Volume</h3>
+                <span class="badge bg-light text-secondary border">Comparative Outlay</span>
+            </div>
+            <div class="panel-body">
+                <div style="height: 320px; width: 100%;">
+                    <canvas id="analyticsMinistryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-industry text-primary"></i> Sector Risk Diagnostics</h3>
+                <span class="badge bg-light text-secondary border">Average Risk Index</span>
+            </div>
+            <div class="panel-body">
+                <div style="height: 320px; width: 100%;">
+                    <canvas id="analyticsSectorChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- State Distribution & Financial Escalation Curves -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-map-location text-primary"></i> State-Wise Projects & Risk Profile</h3>
+                <span class="badge bg-light text-secondary border">Top 10 States</span>
+            </div>
+            <div class="panel-body">
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="analyticsStateChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <h3 class="panel-title"><i class="fa-solid fa-chart-line text-primary"></i> Outlay vs Delivery Dispersion</h3>
+                <span class="badge bg-light text-secondary border">Progress vs Spend Outliers</span>
+            </div>
+            <div class="panel-body">
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="analyticsScatterChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/analytics')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                renderAnalyticsCharts(data.analytics);
+            }
+        });
+});
+
+function renderAnalyticsCharts(charts) {
+    // 1. Ministry Bar Chart
+    const ctxMin = document.getElementById('analyticsMinistryChart');
+    if (ctxMin && charts.ministries) {
+        new Chart(ctxMin, {
+            type: 'bar',
+            data: {
+                labels: charts.ministries.labels,
+                datasets: [{
+                    label: 'Projects',
+                    data: charts.ministries.counts,
+                    backgroundColor: '#1d3557',
+                    borderRadius: 4
+                }, {
+                    label: 'Avg Risk Index',
+                    data: charts.ministries.avg_risks,
+                    backgroundColor: '#f97316',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+                }
+            }
+        });
+    }
+
+    // 2. Sector Risk Bar
+    const ctxSec = document.getElementById('analyticsSectorChart');
+    if (ctxSec && charts.sectors) {
+        new Chart(ctxSec, {
+            type: 'bar',
+            data: {
+                labels: charts.sectors.labels,
+                datasets: [{
+                    label: 'Avg Risk Score (0-100)',
+                    data: charts.sectors.avg_risks,
+                    backgroundColor: charts.sectors.avg_risks.map(r => r >= 60 ? '#ef4444' : (r >= 40 ? '#f59e0b' : '#10b981')),
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { min: 0, max: 100, grid: { color: '#f1f5f9' } }
+                }
+            }
+        });
+    }
+
+    // 3. State Bar Chart
+    const ctxState = document.getElementById('analyticsStateChart');
+    if (ctxState && charts.states) {
+        new Chart(ctxState, {
+            type: 'bar',
+            data: {
+                labels: charts.states.labels,
+                datasets: [{
+                    label: 'Projects Count',
+                    data: charts.states.counts,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 4. Scatter Dispersion
+    const ctxScat = document.getElementById('analyticsScatterChart');
+    if (ctxScat && charts.scatter_points) {
+        new Chart(ctxScat, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Projects',
+                    data: charts.scatter_points.map(p => ({ x: p.x, y: p.y })),
+                    backgroundColor: '#2563eb',
+                    pointRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Physical Progress (%)' }, min: 0, max: 100 },
+                    y: { title: { display: true, text: 'Disbursement Utilization (%)' }, min: 0, max: 120 }
+                }
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

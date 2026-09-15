@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}403 Access Denied — ProjectPulse AI{% endblock %}
+{% block header_title %}Access Denied{% endblock %}
+{% block breadcrumb %}Security & Role Authorization Guard{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="display-1 fw-bold text-danger mb-3">403</div>
+        <h3 class="fw-bold text-dark mb-2">Insufficient Role Privileges</h3>
+        <p class="text-secondary mb-4">
+            You do not possess the necessary clearance or role permissions to access this administrative section. Please sign in with an authorized account.
+        </p>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary px-4">
+            <i class="fa-solid fa-house me-1"></i> Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account — ProjectPulse AI{% endblock %}
+{% block header_title %}Official Account Registration{% endblock %}
+{% block breadcrumb %}Government Project Intelligence & Early Warning Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-4">
+    <div class="col-xl-6 col-lg-7 col-md-9 col-11" style="max-width: 580px;">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="bg-primary text-white p-4 text-center" style="background: linear-gradient(135deg, #0d1b2a, #1d3557) !important;">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white text-primary rounded-circle mb-3 shadow" style="width: 64px; height: 64px;">
+                    <i class="fa-solid fa-user-plus fs-2" style="color: #1d3557;"></i>
+                </div>
+                <h3 class="fw-bold mb-1">ProjectPulse AI</h3>
+                <p class="small text-light opacity-75 mb-0">Infrastructure Project Intelligence & Early Warning Platform</p>
+                <div class="badge bg-warning text-dark mt-2 fw-semibold px-3 py-1">SIH26103 Prototype</div>
+            </div>
+
+            <div class="card-body p-4 p-md-5 bg-white">
+                {% if registration_success %}
+                <!-- Success State: Account Created - Verification Required -->
+                <div class="text-center py-2">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                        <i class="fa-solid fa-envelope-circle-check fs-1"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-2">Account Created Successfully!</h4>
+                    <div class="alert alert-success border-0 py-3 px-4 mb-3 rounded-3 text-center" style="background-color: #ecfdf5; color: #065f46;">
+                        <i class="fa-solid fa-circle-check me-1"></i>
+                        <strong>Account created. Please check your email to verify your account.</strong>
+                        <div class="small mt-2 text-muted">
+                            A secure verification link was dispatched to <strong class="text-dark">{{ registered_email }}</strong>.
+                        </div>
+                    </div>
+
+                    {% if verification_link %}
+                    <!-- Development Mailbox Helper -->
+                    <div class="p-3 mb-3 rounded-3 border bg-light text-start small">
+                        <div class="fw-bold text-dark mb-1"><i class="fa-solid fa-terminal me-1 text-primary"></i> Development Mode Email Dispatch:</div>
+                        <div class="text-muted mb-2" style="font-size: 0.76rem;">Since this is running in development/prototype mode, you can verify immediately via this link:</div>
+                        <a href="{{ verification_link }}" class="btn btn-sm btn-outline-success w-100 text-truncate fw-semibold">
+                            <i class="fa-solid fa-link me-1"></i> Click Here to Verify Email Directly
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2 mb-3">
+                        <a href="{{ url_for('auth.resend_verification', email=registered_email) }}" class="btn btn-outline-primary py-2 fw-semibold">
+                            <i class="fa-solid fa-rotate me-1"></i> Resend Verification Email
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary py-2 fw-semibold" style="background-color: #1d3557; border-color: #1d3557;">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Go to Login
+                        </a>
+                    </div>
+                </div>
+
+                {% else %}
+                <!-- Registration Form -->
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">Create Official Account</h5>
+                        <p class="small text-muted mb-0">Register for government project monitoring access</p>
+                    </div>
+                    <span class="badge bg-light text-primary border">Mandatory Verification</span>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-id-card text-secondary"></i></span>
+                            <input type="text" name="full_name" id="fullNameInput" class="form-control form-control-lg fs-6 border-start-0 ps-0" placeholder="e.g. Priya Sharma" value="{{ form_data.get('full_name', '') if form_data else '' }}" required autofocus>
+                        </div>
+                    </div>
+
+                    <!-- Organization -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Organization / Ministry / Department <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-building-columns text-secondary"></i></span>
+                            <input type="text" name="organization" id="organizationInput" class="form-control form-control-lg fs-6 border-start-0 ps-0" placeholder="e.g. Ministry of Road Transport & Highways" value="{{ form_data.get('organization', '') if form_data else '' }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Official Email -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Official Email <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-envelope text-secondary"></i></span>
+                            <input type="email" name="email" id="emailInput" class="form-control form-control-lg fs-6 border-start-0 ps-0" placeholder="e.g. officer@infra.gov.in" value="{{ form_data.get('email', '') if form_data else '' }}" autocapitalize="none" required>
+                        </div>
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">A mandatory verification link will be sent to this official address.</div>
+                    </div>
+
+                    <!-- Official Mobile Number (Optional, for SMS verification) -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Official Mobile Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-phone text-secondary"></i></span>
+                            <input type="text" name="phone_number" id="phoneInput" class="form-control form-control-lg fs-6 border-start-0 ps-0" placeholder="e.g. +91 98765 43210" value="{{ form_data.get('phone_number', '') if form_data else '' }}">
+                        </div>
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">Used for 2FA and SMS password recovery/updates.</div>
+                    </div>
+
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Username <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-at text-secondary"></i></span>
+                            <input type="text" name="username" id="usernameInput" class="form-control form-control-lg fs-6 border-start-0 ps-0" placeholder="e.g. priya_officer" value="{{ form_data.get('username', '') if form_data else '' }}" autocapitalize="none" autocomplete="username" required>
+                        </div>
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">3–30 characters (letters, numbers, underscore only). Case-insensitive unique.</div>
+                    </div>
+
+                    <!-- Role Selection -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Assigned Role <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-shield-halved text-secondary"></i></span>
+                            <select name="role" id="roleSelect" class="form-select form-select-lg fs-6 border-start-0 ps-0" required>
+                                <option value="" disabled {% if not form_data or not form_data.get('role') %}selected{% endif %}>Select Assigned Role</option>
+                                <option value="officer" {% if form_data and form_data.get('role') == 'officer' %}selected{% endif %}>Monitoring Officer (Requires Administrator Approval)</option>
+                                <option value="viewer" {% if form_data and form_data.get('role') == 'viewer' %}selected{% endif %}>Observer / Viewer (Direct Activation Upon Verification)</option>
+                            </select>
+                        </div>
+                        <div class="form-text text-muted small mt-1">
+                            <i class="fa-solid fa-lock text-warning me-1"></i>
+                            <strong>Security Notice:</strong> Administrator accounts must remain protected and cannot be created via self-registration.
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-secondary"></i></span>
+                            <input type="password" name="password" id="passwordInput" class="form-control form-control-lg fs-6 border-start-0 border-end-0 ps-0" placeholder="e.g. Project@123" required>
+                            <button class="btn btn-outline-secondary bg-light border-start-0" type="button" id="toggleRegPasswordBtn" title="Show/Hide Password">
+                                <i class="fa-regular fa-eye" id="toggleRegPasswordIcon"></i>
+                            </button>
+                        </div>
+
+                        <!-- Real-time Password Requirements Checklist -->
+                        <div class="card p-2 mt-2 bg-light border-0 rounded-3">
+                            <div class="fw-bold text-muted small mb-1" style="font-size: 0.76rem;">Password security requirements:</div>
+                            <div class="row g-1 small" style="font-size: 0.75rem;">
+                                <div class="col-6" id="rule-len">
+                                    <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Minimum 8 characters
+                                </div>
+                                <div class="col-6" id="rule-upper">
+                                    <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Capital letter (A-Z)
+                                </div>
+                                <div class="col-6" id="rule-lower">
+                                    <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Small letter (a-z)
+                                </div>
+                                <div class="col-6" id="rule-num">
+                                    <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Number (0-9)
+                                </div>
+                                <div class="col-12" id="rule-sym">
+                                    <i class="fa-solid fa-circle-xmark text-danger me-1"></i> Special symbol (!@#$%^&*)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Confirm Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-check-double text-secondary"></i></span>
+                            <input type="password" name="confirm_password" id="confirmPasswordInput" class="form-control form-control-lg fs-6 border-start-0 border-end-0 ps-0" placeholder="Re-enter password" required>
+                            <button class="btn btn-outline-secondary bg-light border-start-0" type="button" id="toggleRegConfirmPasswordBtn" title="Show/Hide Password">
+                                <i class="fa-regular fa-eye" id="toggleRegConfirmPasswordIcon"></i>
+                            </button>
+                        </div>
+                        <div id="match-feedback" class="small mt-1 text-danger d-none">
+                            <i class="fa-solid fa-circle-exclamation me-1"></i> Passwords do not match.
+                        </div>
+                    </div>
+
+                    <button type="submit" id="regSubmitBtn" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm" style="background-color: #1d3557; border-color: #1d3557;">
+                        <i class="fa-solid fa-user-plus me-2"></i> <span id="regSubmitBtnText">Create Account</span>
+                    </button>
+                </form>
+
+                <!-- Navigation link to Sign In -->
+                <div class="text-center mt-3 mb-2">
+                    <span class="text-muted small">Already have an account?</span>
+                    <a href="{{ url_for('auth.login') }}" class="fw-bold text-primary text-decoration-none ms-1 small">
+                        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Sign In
+                    </a>
+                </div>
+
+                {% if existing_unverified_email %}
+                <div class="text-center mt-2">
+                    <a href="{{ url_for('auth.resend_verification', email=existing_unverified_email) }}" class="small text-warning-emphasis fw-bold">
+                        <i class="fa-solid fa-envelope-circle-check me-1"></i> Resend Verification Email for {{ existing_unverified_email }}
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Exact Disclaimer -->
+                <div class="alert alert-info py-2 px-3 mt-3 mb-0 small border-0 text-center rounded-3" style="background-color: #f0f7ff; color: #1e40af;">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    <strong>Representative Demo Dataset — Not official government data.</strong>
+                </div>
+
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const pwdInput = document.getElementById('passwordInput');
+                    const confirmInput = document.getElementById('confirmPasswordInput');
+                    const regBtn = document.getElementById('regSubmitBtn');
+                    const matchFeedback = document.getElementById('match-feedback');
+
+                    // Requirement items
+                    const ruleLen = document.getElementById('rule-len');
+                    const ruleUpper = document.getElementById('rule-upper');
+                    const ruleLower = document.getElementById('rule-lower');
+                    const ruleNum = document.getElementById('rule-num');
+                    const ruleSym = document.getElementById('rule-sym');
+
+                    const specialPattern = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/;
+
+                    function updateRuleStatus(el, isValid, text) {
+                        if (!el) return;
+                        if (isValid) {
+                            el.innerHTML = '<i class="fa-solid fa-circle-check text-success me-1"></i> ' + text;
+                        } else {
+                            el.innerHTML = '<i class="fa-solid fa-circle-xmark text-danger me-1"></i> ' + text;
+                        }
+                    }
+
+                    function validatePasswordLive() {
+                        const val = pwdInput.value || '';
+                        const hasLen = val.length >= 8;
+                        const hasUpper = /[A-Z]/.test(val);
+                        const hasLower = /[a-z]/.test(val);
+                        const hasNum = /[0-9]/.test(val);
+                        const hasSym = specialPattern.test(val);
+
+                        updateRuleStatus(ruleLen, hasLen, 'Minimum 8 characters');
+                        updateRuleStatus(ruleUpper, hasUpper, 'Capital letter (A-Z)');
+                        updateRuleStatus(ruleLower, hasLower, 'Small letter (a-z)');
+                        updateRuleStatus(ruleNum, hasNum, 'Number (0-9)');
+                        updateRuleStatus(ruleSym, hasSym, 'Special symbol (!@#$%^&*)');
+
+                        const allMet = hasLen && hasUpper && hasLower && hasNum && hasSym;
+
+                        if (confirmInput.value) {
+                            if (confirmInput.value !== val) {
+                                matchFeedback.classList.remove('d-none');
+                            } else {
+                                matchFeedback.classList.add('d-none');
+                            }
+                        }
+
+                        return allMet;
+                    }
+
+                    pwdInput.addEventListener('input', validatePasswordLive);
+                    confirmInput.addEventListener('input', validatePasswordLive);
+
+                    // Form validation on submit
+                    const regForm = document.getElementById('registerForm');
+                    if (regForm) {
+                        regForm.addEventListener('submit', function(e) {
+                            const val = pwdInput.value || '';
+                            const confVal = confirmInput.value || '';
+
+                            const allMet = validatePasswordLive();
+
+                            if (!allMet) {
+                                e.preventDefault();
+                                alert("Please ensure your password satisfies all security requirements: at least 8 characters, capital letter (A-Z), small letter (a-z), number (0-9), and special symbol.");
+                                return false;
+                            }
+
+                            if (val !== confVal) {
+                                e.preventDefault();
+                                matchFeedback.classList.remove('d-none');
+                                alert("Passwords do not match. Please re-enter.");
+                                return false;
+                            }
+
+                            regBtn.disabled = true;
+                            regBtn.classList.add('disabled');
+                            const regBtnText = document.getElementById('regSubmitBtnText');
+                            if (regBtnText) {
+                                regBtnText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin me-2"></i> Registering account...';
+                            }
+                        });
+                    }
+
+                    // Password show/hide toggle
+                    const togglePwdBtn = document.getElementById('toggleRegPasswordBtn');
+                    const togglePwdIcon = document.getElementById('toggleRegPasswordIcon');
+                    if (togglePwdBtn && pwdInput && togglePwdIcon) {
+                        togglePwdBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (pwdInput.type === 'password') {
+                                pwdInput.type = 'text';
+                                togglePwdIcon.className = 'fa-regular fa-eye-slash';
+                            } else {
+                                pwdInput.type = 'password';
+                                togglePwdIcon.className = 'fa-regular fa-eye';
+                            }
+                        });
+                    }
+
+                    // Confirm password show/hide toggle
+                    const toggleConfirmBtn = document.getElementById('toggleRegConfirmPasswordBtn');
+                    const toggleConfirmIcon = document.getElementById('toggleRegConfirmPasswordIcon');
+                    if (toggleConfirmBtn && confirmInput && toggleConfirmIcon) {
+                        toggleConfirmBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (confirmInput.type === 'password') {
+                                confirmInput.type = 'text';
+                                toggleConfirmIcon.className = 'fa-regular fa-eye-slash';
+                            } else {
+                                confirmInput.type = 'password';
+                                toggleConfirmIcon.className = 'fa-regular fa-eye';
+                            }
+                        });
+                    }
+                });
+                </script>
+                {% endif %}
+            </div>
+
+            <div class="card-footer bg-light p-3 text-center small text-muted border-top">
+                <i class="fa-solid fa-shield-halved text-success me-1"></i>
+                Authorized Government Infrastructure Decision Support System
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
