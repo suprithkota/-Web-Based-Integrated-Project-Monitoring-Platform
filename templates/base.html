@@ -16,6 +16,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Custom Theme CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_head %}{% endblock %}
@@ -24,14 +29,16 @@
 
     <!-- Official Top Demo Banner -->
     <div class="demo-banner">
-        <div>
-            <span class="demo-badge"><i class="fa-solid fa-flask me-1"></i> DEMO MODE</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="demo-badge"><i class="fa-solid fa-satellite-dish me-1"></i> COMMAND CENTER</span>
             <span class="d-none d-md-inline text-slate-300">{{ DATASET_LABEL }}</span>
         </div>
         <div class="text-end">
-            <span class="text-light opacity-75 small">Complementing PAIMANA Ecosystem | SIH26103</span>
+            <span class="text-light opacity-75 small">National Infrastructure Decision Support &bull; PAIMANA Ecosystem | SIH26103</span>
         </div>
     </div>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <div class="app-wrapper">
         <!-- Sidebar Navigation -->
@@ -58,6 +65,32 @@
                     <span>Projects Registry</span>
                 </a>
 
+                <div class="nav-category">Contractor Intelligence</div>
+                <a href="{{ url_for('contractors.dashboard') }}" class="nav-link {% if request.endpoint == 'contractors.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-building-user text-info"></i>
+                    <span>Contractor Intel</span>
+                </a>
+                <a href="{{ url_for('contractors.index') }}" class="nav-link {% if request.endpoint == 'contractors.index' %}active{% endif %}">
+                    <i class="fa-solid fa-address-book text-info"></i>
+                    <span>Company Directory</span>
+                </a>
+                <a href="{{ url_for('contractors.materials_explorer') }}" class="nav-link {% if request.endpoint == 'contractors.materials_explorer' %}active{% endif %}">
+                    <i class="fa-solid fa-vial-circle-check text-success"></i>
+                    <span>Materials & BIS Labs</span>
+                </a>
+                <a href="{{ url_for('contractors.delays_explorer') }}" class="nav-link {% if request.endpoint == 'contractors.delays_explorer' %}active{% endif %}">
+                    <i class="fa-solid fa-business-time text-danger"></i>
+                    <span>Delay Root Causes</span>
+                </a>
+                <a href="{{ url_for('contractors.post_construction') }}" class="nav-link {% if request.endpoint == 'contractors.post_construction' %}active{% endif %}">
+                    <i class="fa-solid fa-road text-warning"></i>
+                    <span>Post-Construction DLP</span>
+                </a>
+                <a href="{{ url_for('contractors.complaints_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contractors.complaint') %}active{% endif %}">
+                    <i class="fa-solid fa-bullhorn text-warning"></i>
+                    <span>Citizen Grievances</span>
+                </a>
+
                 <div class="nav-category">Intelligence & Early Action</div>
                 <a href="{{ url_for('alerts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('alerts.') %}active{% endif %}">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -71,8 +104,8 @@
                     <span>What-If Simulator</span>
                 </a>
                 <a href="{{ url_for('assistant.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('assistant.') %}active{% endif %}">
-                    <i class="fa-solid fa-robot"></i>
-                    <span>AI Project Assistant</span>
+                    <i class="fa-solid fa-robot text-primary"></i>
+                    <span>AI Voice Assistant</span>
                 </a>
 
                 <div class="nav-category">Geospatial & Analytics</div>
@@ -84,6 +117,39 @@
                     <i class="fa-solid fa-map-location-dot"></i>
                     <span>India Project Map</span>
                 </a>
+
+                {% if current_user.role in ['admin', 'officer'] %}
+                <div class="nav-category text-primary-emphasis"><i class="fa-solid fa-hard-hat me-1"></i> Engineering Operations</div>
+                <a href="{{ url_for('engineering.dashboard') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('engineering.') %}active{% endif %}">
+                    <i class="fa-solid fa-ruler-combined text-primary"></i>
+                    <span>Site Operations</span>
+                </a>
+                <a href="{{ url_for('engineering.new_inspection') }}" class="nav-link">
+                    <i class="fa-solid fa-clipboard-check text-primary"></i>
+                    <span>Log Site Inspection</span>
+                </a>
+                <a href="{{ url_for('data_sync.officer_data_entry') }}" class="nav-link">
+                    <i class="fa-solid fa-file-pen text-primary"></i>
+                    <span>Verified Data Entry</span>
+                </a>
+
+                <div class="nav-category text-info-emphasis"><i class="fa-solid fa-network-wired me-1"></i> Official Data Sync</div>
+                <a href="{{ url_for('data_sync.data_sources') }}" class="nav-link {% if request.endpoint == 'data_sync.data_sources' %}active{% endif %}">
+                    <i class="fa-solid fa-server text-info"></i>
+                    <span>Data Sources</span>
+                </a>
+                <a href="{{ url_for('data_sync.data_conflicts') }}" class="nav-link {% if request.endpoint == 'data_sync.data_conflicts' %}active{% endif %}">
+                    <i class="fa-solid fa-code-compare text-warning"></i>
+                    <span>Conflict Resolution</span>
+                    {% if UNRESOLVED_CONFLICTS_COUNT > 0 %}
+                    <span class="badge bg-warning text-dark rounded-pill ms-auto">{{ UNRESOLVED_CONFLICTS_COUNT }}</span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('data_sync.sync_logs') }}" class="nav-link {% if request.endpoint == 'data_sync.sync_logs' %}active{% endif %}">
+                    <i class="fa-solid fa-clock-rotate-left text-info"></i>
+                    <span>Sync Audit Logs</span>
+                </a>
+                {% endif %}
 
                 {% if current_user.is_admin %}
                 <div class="nav-category text-danger-emphasis"><i class="fa-solid fa-shield-halved me-1"></i> Administrator Control</div>
@@ -103,13 +169,7 @@
                     <i class="fa-solid fa-sliders text-danger"></i>
                     <span>System Settings</span>
                 </a>
-                {% elif current_user.role == 'officer' %}
-                <div class="nav-category text-info-emphasis"><i class="fa-solid fa-user-shield me-1"></i> Monitoring Officer</div>
-                <a href="{{ url_for('projects.index') }}" class="nav-link">
-                    <i class="fa-solid fa-pen-to-square text-info"></i>
-                    <span>Operational Updates</span>
-                </a>
-                {% else %}
+                {% elif current_user.role == 'viewer' %}
                 <div class="nav-category text-secondary"><i class="fa-solid fa-eye me-1"></i> Viewer Access</div>
                 <div class="px-3 py-2 text-secondary" style="font-size: 0.78rem;">
                     <i class="fa-solid fa-lock text-muted me-1"></i> Read-Only Observer Mode
@@ -153,28 +213,40 @@
         <div class="app-main">
             <!-- Top Navbar -->
             <header class="app-topbar">
-                <div class="page-title-area">
-                    <h1>{% block header_title %}Command Center{% endblock %}</h1>
-                    <p class="page-breadcrumb">{% block breadcrumb %}Infrastructure Oversight & Decision Support{% endblock %}</p>
+                <div class="d-flex align-items-center">
+                    {% if current_user.is_authenticated %}
+                    <button type="button" class="sidebar-toggle-btn" id="sidebarToggle" title="Toggle Navigation Menu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    {% endif %}
+                    <div class="page-title-area">
+                        <h1>{% block header_title %}Command Center{% endblock %}</h1>
+                        <p class="page-breadcrumb">{% block breadcrumb %}Infrastructure Oversight & Decision Support{% endblock %}</p>
+                    </div>
                 </div>
                 
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2 gap-md-3">
                     {% if current_user.is_authenticated %}
-                    <button type="button" class="btn btn-sm border-success-subtle bg-success-subtle text-success-emphasis rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#protectedSessionModal" title="Click to view session security status">
-                        <span class="spinner-grow spinner-grow-sm text-success" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
-                        <span class="fw-bold" style="font-size: 0.8rem;">● Protected Session</span>
+                    <div class="d-none d-sm-inline-flex align-items-center gap-2 px-2 py-1 rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle shadow-sm" style="font-size: 0.76rem; font-weight: 600;">
+                        <span class="pulse-dot"></span>
+                        <span>Live Telemetry</span>
+                    </div>
+
+                    <button type="button" class="btn btn-sm border-secondary-subtle bg-white text-dark rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#protectedSessionModal" title="Click to view session security status">
+                        <i class="fa-solid fa-shield-halved text-success"></i>
+                        <span class="fw-semibold d-none d-md-inline" style="font-size: 0.78rem;">Protected Session</span>
                     </button>
 
-                    <span class="badge {% if current_user.role == 'admin' %}bg-danger-subtle text-danger border-danger-subtle{% elif current_user.role == 'officer' %}bg-primary-subtle text-primary border-primary-subtle{% else %}bg-secondary-subtle text-secondary border-secondary-subtle{% endif %} border px-3 py-2 fw-semibold">
+                    <span class="badge {% if current_user.role == 'admin' %}bg-danger-subtle text-danger border-danger-subtle{% elif current_user.role == 'officer' %}bg-primary-subtle text-primary border-primary-subtle{% else %}bg-secondary-subtle text-secondary border-secondary-subtle{% endif %} border px-2 px-md-3 py-2 fw-semibold d-none d-sm-inline-flex align-items-center">
                         <i class="fa-solid fa-user-shield me-1"></i>
-                        {{ current_user.full_name or current_user.username }} &bull; {{ current_user.role|upper }}
+                        <span>{{ current_user.full_name or current_user.username }} &bull; {{ current_user.role|upper }}</span>
                     </span>
 
-                    <a href="{{ url_for('assistant.index') }}" class="btn btn-outline-primary btn-sm px-3" title="Ask AI Project Assistant">
-                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Assistant
+                    <a href="{{ url_for('assistant.index') }}" class="btn btn-primary btn-sm px-3 shadow-sm" title="Ask AI Project Assistant">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> <span class="d-none d-md-inline">AI Assistant</span>
                     </a>
                     {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm px-4">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm px-4 shadow-sm">
                         <i class="fa-solid fa-right-to-bracket me-1"></i> Officer Login
                     </a>
                     {% endif %}

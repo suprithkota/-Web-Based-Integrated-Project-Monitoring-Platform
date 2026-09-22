@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Materials & Laboratory Quality Explorer — ProjectPulse AI{% endblock %}
+{% block header_title %}Construction Materials & Quality Intelligence{% endblock %}
+{% block breadcrumb %}Bureau of Indian Standards (BIS) Quality Verification & Batch Testing{% endblock %}
+
+{% block content %}
+<!-- BIS Standards Notice -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-vial-circle-check text-success fs-3"></i>
+        <div>
+            <div class="fw-bold">Bureau of Indian Standards (BIS) & NABL Lab Quality Protocols</div>
+            <small class="text-muted">
+                Steel Rebar: <span class="badge bg-light text-dark border">IS 1786:2008</span> &bull; 
+                Concrete Strength: <span class="badge bg-light text-dark border">IS 516:2021 (7/28 Days)</span> &bull; 
+                Cement: <span class="badge bg-light text-dark border">IS 269:2015</span> &bull; 
+                Bitumen: <span class="badge bg-light text-dark border">IS 73:2013</span>
+            </small>
+        </div>
+    </div>
+    {% if current_user.role in ['admin', 'officer'] %}
+    <a href="{{ url_for('engineering.new_quality_test') }}" class="btn btn-success btn-sm">
+        <i class="fa-solid fa-vial me-1"></i> Record Quality Lab Test
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filters Bar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('contractors.materials_explorer') }}" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> Search Material</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Name, brand, or batch number..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-layer-group me-1"></i> Material Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-shield me-1"></i> Approval Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="Approved" {% if selected_status == 'Approved' %}selected{% endif %}>Approved</option>
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1" style="height: 33px;">Filter</button>
+                <a href="{{ url_for('contractors.materials_explorer') }}" class="btn btn-outline-secondary btn-sm" style="height: 33px;">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Project Materials Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-cubes text-primary me-2"></i>Project Material Batches on Site ({{ materials|length }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Material / Specification</th>
+                    <th>Project</th>
+                    <th>Brand / Manufacturer</th>
+                    <th>Batch Number</th>
+                    <th>Quantity Procured</th>
+                    <th>Approval Status</th>
+                    <th>Certification Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in materials %}
+                <tr>
+                    <td>
+                        <span class="fw-bold text-dark d-block">{{ m.material_name }}</span>
+                        <small class="text-muted">{{ m.specification_standard or m.material_category }}</small>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('projects.detail', project_id=m.project_id) }}" class="text-decoration-none text-dark fw-semibold">
+                            {{ m.project.project_code if m.project else 'Project' }}
+                        </a>
+                        <div class="small text-muted">{{ m.project.project_name if m.project else '' }}</div>
+                    </td>
+                    <td class="small">{{ m.brand_manufacturer }}</td>
+                    <td class="small font-monospace">{{ m.batch_number }}</td>
+                    <td class="small fw-semibold">{{ m.quantity_procured }} {{ m.unit }}</td>
+                    <td>
+                        <span class="badge {% if m.approval_status == 'Approved' %}bg-success{% elif m.approval_status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ m.approval_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ m.quality_certification_status or 'Pending Lab Verification' }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No material batches found matching the filters.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent Laboratory Tests Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-microscope text-success me-2"></i>Recent Laboratory Quality Tests ({{ recent_tests|length }})</h5>
+        <small class="text-muted">Recorded with physical test values & NABL accreditation details</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Test Name</th>
+                    <th>BIS Code</th>
+                    <th>Test Result Value</th>
+                    <th>Status</th>
+                    <th>Testing Laboratory</th>
+                    <th>Inspector / Engineer</th>
+                    <th>Cert Ref</th>
+                    <th>Action Taken</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_tests %}
+                <tr>
+                    <td class="fw-semibold">{{ t.test_name }}</td>
+                    <td class="small font-monospace"><span class="badge bg-light text-dark border">{{ t.required_standard }}</span></td>
+                    <td class="small fw-bold">{{ t.test_result_value }}</td>
+                    <td>
+                        <span class="badge {% if t.status == 'PASS' %}bg-success{% elif t.status == 'FAIL' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ t.status }}
+                        </span>
+                    </td>
+                    <td class="small text-muted">{{ t.testing_laboratory }}</td>
+                    <td class="small text-muted">{{ t.inspector_name }}</td>
+                    <td class="small font-monospace">{{ t.quality_certificate_ref or 'NABL-CERT' }}</td>
+                    <td class="small text-muted">
+                        {% if t.status == 'FAIL' %}
+                        <span class="text-danger fw-semibold">{{ t.rejection_information or 'Batch rejected; replacement ordered' }}</span>
+                        {% else %}
+                        <span class="text-success"><i class="fa-solid fa-check me-1"></i> Conforms to code</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No laboratory test records available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

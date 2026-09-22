@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{% if contractor %}Edit {{ contractor.name }}{% else %}Register Contractor{% endif %} — ProjectPulse AI{% endblock %}
+{% block header_title %}{% if contractor %}Edit Contractor: {{ contractor.name }}{% else %}Register New Construction Company / Contractor{% endif %}{% endblock %}
+{% block breadcrumb %}Contractor Registry Form &bull; Statutory Intelligence{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fa-solid fa-building text-primary me-2"></i>
+                    {% if contractor %}Update Statutory Company Information{% else %}Statutory Contractor Registration{% endif %}
+                </h5>
+                <small class="text-muted">Section 25 Compliance: All identity fields must match official government filings.</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{% if contractor %}{{ url_for('contractors.edit_contractor', contractor_id=contractor.id) }}{% else %}{{ url_for('contractors.new_contractor') }}{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">Company / Contractor Legal Name *</label>
+                            <input type="text" name="name" class="form-control" required value="{{ contractor.name if contractor else '' }}" placeholder="e.g. Larsen & Toubro Limited">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Contractor Internal Code *</label>
+                            <input type="text" name="contractor_code" class="form-control" required value="{{ contractor.contractor_code if contractor else '' }}" placeholder="e.g. CON-0101">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Statutory Registration Number (CIN / ROC / Reg) *</label>
+                            <input type="text" name="registration_number" class="form-control font-monospace" required value="{{ contractor.registration_number if contractor else '' }}" placeholder="e.g. CIN-L99999MH1946PLC004768">
+                            <div class="form-text small">Used for exact entity deduplication. Never merged fuzzily.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Contractor License Number *</label>
+                            <input type="text" name="contractor_license_number" class="form-control font-monospace" required value="{{ contractor.contractor_license_number if contractor else '' }}" placeholder="e.g. LIC-CPWD-CL1-4921">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Company Type</label>
+                            <select name="company_type" class="form-select">
+                                {% for ct in ['Public Limited', 'Private Limited', 'Joint Venture', 'Partnership Firm', 'Proprietorship', 'State PSU', 'Central PSU'] %}
+                                <option value="{{ ct }}" {% if contractor and contractor.company_type == ct %}selected{% endif %}>{{ ct }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Contractor Classification</label>
+                            <select name="contractor_class" class="form-select">
+                                {% for cc in ['Super Class', 'Class-1', 'Class-2', 'Class-3', 'Class-4'] %}
+                                <option value="{{ cc }}" {% if contractor and contractor.contractor_class == cc %}selected{% endif %}>{{ cc }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Registration Status</label>
+                            <select name="status" class="form-select">
+                                <option value="Active" {% if not contractor or contractor.status == 'Active' %}selected{% endif %}>Active</option>
+                                <option value="Debarred" {% if contractor and contractor.status == 'Debarred' %}selected{% endif %}>Debarred</option>
+                                <option value="Suspended" {% if contractor and contractor.status == 'Suspended' %}selected{% endif %}>Suspended</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Year Established</label>
+                            <input type="number" name="year_established" class="form-control" value="{{ contractor.year_established if contractor else 2010 }}" min="1900" max="2030">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Years of Experience</label>
+                            <input type="number" name="years_of_experience" class="form-control" value="{{ contractor.years_of_experience if contractor else 14 }}" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Headquarters Location</label>
+                            <input type="text" name="headquarters" class="form-control" value="{{ contractor.headquarters if contractor else 'New Delhi' }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Authorized Representative / Managing Director</label>
+                            <input type="text" name="owner_representative" class="form-control" value="{{ contractor.owner_representative if contractor else '' }}" placeholder="Name of representative">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Official Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ contractor.email if contractor else '' }}" placeholder="contact@company.gov.in">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Official Phone Number</label>
+                            <input type="text" name="phone_number" class="form-control" value="{{ contractor.phone_number if contractor else '' }}" placeholder="+91 11 2345 6789">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Official Data Source</label>
+                            <input type="text" name="data_source" class="form-control" value="{{ contractor.data_source if contractor else 'Official Procurement Registry' }}">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="{{ url_for('contractors.index') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Contractor Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

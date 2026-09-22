@@ -1,0 +1,20 @@
+{
+  "name": "projectpulse-ai",
+  "version": "1.0.0",
+  "description": "ProjectPulse AI — Intelligent Infrastructure Project Monitoring & Early Warning Platform",
+  "main": "run.py",
+  "scripts": {
+    "start": "python run.py",
+    "dev": "python run.py",
+    "backend": "python run.py"
+  },
+  "keywords": [
+    "sih26103",
+    "infrastructure",
+    "monitoring",
+    "flask",
+    "machine-learning"
+  ],
+  "author": "ProjectPulse AI Team",
+  "license": "ISC"
+}

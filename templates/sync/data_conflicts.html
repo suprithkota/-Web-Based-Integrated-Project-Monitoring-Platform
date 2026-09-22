@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Conflict Resolution Center — ProjectPulse AI{% endblock %}
+{% block header_title %}Data Conflict Detection & Reconciliation Center{% endblock %}
+{% block breadcrumb %}Discrepancy Resolution Between Multiple Official Department Feeds{% endblock %}
+
+{% block content %}
+<!-- Conflict Resolution Protocol Notice -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-code-compare text-warning fs-3"></i>
+        <div>
+            <div class="fw-bold">Multi-Source Discrepancy & Arbitration Engine</div>
+            <small class="text-muted">
+                When official sources report conflicting metrics (e.g., CPPP vs State PWD progress or budget), changes are held in quarantine until resolved by an authorized officer with full audit versioning.
+            </small>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('data_sync.data_conflicts', status='Unresolved') }}" class="btn btn-sm {% if selected_status == 'Unresolved' %}btn-warning text-dark fw-bold{% else %}btn-outline-secondary{% endif %}">
+            Unresolved
+        </a>
+        <a href="{{ url_for('data_sync.data_conflicts', status='Resolved') }}" class="btn btn-sm {% if selected_status == 'Resolved' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+            Resolved History
+        </a>
+    </div>
+</div>
+
+<!-- Conflicts List -->
+<div class="row g-4">
+    {% for c in conflicts %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-light text-dark border font-monospace me-2">CONFLICT-{{ c.id }}</span>
+                    <span class="fw-bold text-dark">{{ c.entity_type }} #{{ c.entity_id }} &bull; Discrepancy on field: <code class="text-danger fw-bold">{{ c.field_name }}</code></span>
+                </div>
+                <span class="badge {% if c.status == 'Unresolved' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                    {{ c.status }}
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4 mb-4">
+                    <!-- Source A -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded h-100 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary">Source A</span>
+                                <small class="text-muted font-monospace">{{ c.source_a_timestamp.strftime('%d-%b-%Y %H:%M') if c.source_a_timestamp else '' }}</small>
+                            </div>
+                            <div class="fw-bold text-dark">{{ c.source_a_name }}</div>
+                            <div class="fs-4 fw-bold text-primary mt-2">{{ c.source_a_value }}</div>
+                            <small class="text-muted">Recorded official value</small>
+                        </div>
+                    </div>
+
+                    <!-- Source B -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded h-100 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-info text-dark">Source B</span>
+                                <small class="text-muted font-monospace">{{ c.source_b_timestamp.strftime('%d-%b-%Y %H:%M') if c.source_b_timestamp else '' }}</small>
+                            </div>
+                            <div class="fw-bold text-dark">{{ c.source_b_name }}</div>
+                            <div class="fs-4 fw-bold text-info mt-2">{{ c.source_b_value }}</div>
+                            <small class="text-muted">Incoming conflicting feed value</small>
+                        </div>
+                    </div>
+                </div>
+
+                {% if c.status == 'Unresolved' and current_user.role in ['admin', 'officer'] %}
+                <!-- Resolution Form -->
+                <div class="p-3 bg-light rounded border">
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-gavel text-primary me-2"></i>Officer Conflict Resolution Action</h6>
+                    <form method="POST" action="{{ url_for('data_sync.resolve_conflict', conflict_id=c.id) }}" class="row g-3 align-items-end">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Select Adopted Authority *</label>
+                            <select name="resolution_choice" class="form-select form-select-sm" required>
+                                <option value="source_a">Adopt Source A ({{ c.source_a_name }}: {{ c.source_a_value }})</option>
+                                <option value="source_b">Adopt Source B ({{ c.source_b_name }}: {{ c.source_b_value }})</option>
+                                <option value="custom">Override with Custom Verified Officer Value</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Custom Value (If Override)</label>
+                            <input type="text" name="custom_value" class="form-control form-control-sm" placeholder="e.g. 74.5">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Resolution Justification Notes *</label>
+                            <input type="text" name="resolution_notes" class="form-control form-control-sm" required placeholder="e.g. Verified via Physical Inspection">
+                        </div>
+
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="fa-solid fa-check me-1"></i> Apply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% else %}
+                <div class="alert alert-success border-0 mb-0 small">
+                    <strong>Resolved By:</strong> {{ c.resolved_by }} on {{ c.resolved_at.strftime('%d-%b-%Y %H:%M') if c.resolved_at else '' }} &bull; 
+                    <strong>Adopted Value:</strong> <span class="fw-bold">{{ c.resolved_value }}</span><br>
+                    <strong>Officer Notes:</strong> {{ c.notes }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm p-5 text-center text-muted">
+            <i class="fa-solid fa-circle-check text-success fs-1 mb-2"></i>
+            <h5 class="fw-bold text-dark">Zero Discrepancies Found</h5>
+            <p class="mb-0 small">All connected official data sources are synchronized in full consensus.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

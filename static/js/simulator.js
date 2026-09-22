@@ -123,6 +123,15 @@ function updateSimulationUI(data) {
     dHealth.innerText = (data.deltas.health_delta > 0 ? '+' : '') + data.deltas.health_delta;
     dHealth.className = 'fw-bold fs-6 ' + (data.deltas.health_delta >= 0 ? 'text-success' : 'text-danger');
 
+    // Multi-Model Consensus (Simulated)
+    const simRegs = (data.simulated && data.simulated.model_predictions && data.simulated.model_predictions.regressors) || {};
+    const simRf = document.getElementById('simRfScore');
+    const simXgb = document.getElementById('simXgbScore');
+    const simLgb = document.getElementById('simLgbScore');
+    if (simRf) simRf.innerText = (simRegs.random_forest != null ? simRegs.random_forest + '/100' : (data.simulated.risk_score + '/100'));
+    if (simXgb) simXgb.innerText = (simRegs.xgboost != null ? simRegs.xgboost + '/100' : 'N/A');
+    if (simLgb) simLgb.innerText = (simRegs.lightgbm != null ? simRegs.lightgbm + '/100' : 'N/A');
+
     // Narrative
     document.getElementById('simulatedExplanation').innerText = data.simulated.explanation;
 }

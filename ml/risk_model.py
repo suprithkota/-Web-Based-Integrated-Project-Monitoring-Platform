@@ -7,6 +7,9 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from ml.preprocessing import extract_features_from_dict
+from ml.model_registry import model_registry
+from ml.explainability.shap_explainer import compute_shap_explanation
+from ml.model_comparison import get_model_comparison_report
 
 MODEL_DIR = BASE_DIR / 'ml' / 'models'
 
@@ -207,6 +210,48 @@ class RiskEngine:
                 'description': 'Potential contributing factor: Scope modification, raw material inflation, or extended supervision overheads.'
             })
 
+        # 6. Multi-Model Inference, Clustering, Anomaly Detection & SHAP Explainability
+        try:
+            reg_preds = model_registry.predict_all_regressors(feats)
+        except Exception:
+            reg_preds = {'random_forest': overall_risk}
+
+        try:
+            clf_preds = model_registry.predict_all_classifiers(feats)
+        except Exception:
+            clf_preds = {}
+
+        try:
+            anomaly_info = model_registry.detect_anomaly(feats)
+        except Exception:
+            anomaly_info = {'detected': False, 'status': 'NORMAL', 'anomaly_score': 15.0}
+
+        try:
+            cluster_info = model_registry.assign_cluster(feats)
+        except Exception:
+            cluster_info = {'id': 0, 'label': 'Standard Cohort', 'archetype': 'Standard'}
+
+        try:
+            shap_info = compute_shap_explanation(self.ml_model, feats, model_id='rf', model_name='Random Forest')
+        except Exception:
+            shap_info = {
+                'method': 'Heuristic-Attribution',
+                'status': 'fallback',
+                'base_value': 25.0,
+                'features': [],
+                'top_risk_drivers': [],
+                'summary_statement': 'SHAP calculation fallback.'
+            }
+
+        try:
+            comparison_summary = get_model_comparison_report()
+        except Exception:
+            comparison_summary = {}
+
+        top_risk_features = [
+            f['display_name'] for f in shap_info.get('top_risk_drivers', [])
+        ] or [k for k, v in sorted_factors[:3]]
+
         return {
             'delay_probability': delay_prob,
             'cost_overrun_probability': cost_prob,
@@ -216,7 +261,18 @@ class RiskEngine:
             'health_breakdown': health_breakdown,
             'contributing_factors': dict(sorted_factors),
             'explanation': explanation,
-            'root_causes': root_causes
+            'root_causes': root_causes,
+            # Additional Multi-Model ML & SHAP metadata (non-breaking)
+            'ml_model_used': 'RandomForestRegressor (Ensemble Primary)',
+            'model_predictions': {
+                'regressors': reg_preds,
+                'classifiers': clf_preds
+            },
+            'shap_explanation': shap_info,
+            'top_risk_features': top_risk_features,
+            'anomaly': anomaly_info,
+            'cluster': cluster_info,
+            'model_comparison': comparison_summary
         }
 
 

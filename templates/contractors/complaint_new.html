@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}File Public Grievance — ProjectPulse AI{% endblock %}
+{% block header_title %}File a Public Infrastructure Grievance{% endblock %}
+{% block breadcrumb %}Transparent Citizen Reporting with Geolocation & Photo Upload{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-bullhorn text-warning me-2"></i>Citizen Infrastructure Grievance Form</h5>
+                <small class="text-muted">Report potholes, structural cracks, delayed work, substandard materials, or safety hazards.</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('contractors.new_complaint') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Related Infrastructure Project (Optional)</label>
+                        <select name="project_id" class="form-select">
+                            <option value="">General Public Infrastructure / Road / Bridge</option>
+                            {% for p in projects %}
+                            <option value="{{ p.id }}" {% if selected_project_id == p.id %}selected{% endif %}>
+                                {{ p.project_code }} - {{ p.project_name }} ({{ p.state }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Grievance Category *</label>
+                            <select name="category" class="form-select" required>
+                                <option value="Potholes / Pavement Breakdown">Potholes / Pavement Breakdown</option>
+                                <option value="Structural Cracks / Safety Hazard">Structural Cracks / Safety Hazard</option>
+                                <option value="Substandard Material Suspected">Substandard Material Suspected</option>
+                                <option value="Prolonged Project Stoppage / Delay">Prolonged Project Stoppage / Delay</option>
+                                <option value="Drainage / Waterlogging Failure">Drainage / Waterlogging Failure</option>
+                                <option value="Workplace Safety / Encroachment">Workplace Safety / Encroachment</option>
+                                <option value="Other Infrastructure Issue">Other Infrastructure Issue</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Specific Location / Landmark *</label>
+                            <input type="text" name="location" class="form-control" required placeholder="e.g. NH-44 Km Stone 122 near Toll Plaza, Panipat">
+                        </div>
+                    </div>
+
+                    <!-- Geolocation Capture -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">GPS Latitude</label>
+                            <input type="number" step="any" name="gps_lat" id="gps_lat" class="form-control font-monospace" placeholder="e.g. 28.6139">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">GPS Longitude</label>
+                            <input type="number" step="any" name="gps_lng" id="gps_lng" class="form-control font-monospace" placeholder="e.g. 77.2090">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="captureLocation()" title="Capture Current GPS">
+                                <i class="fa-solid fa-crosshairs me-1"></i> Detect
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Detailed Description of Issue *</label>
+                        <textarea name="description" class="form-control" rows="4" required placeholder="Please describe the defect, location details, safety risks, and observed problems accurately..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Your Name (Optional / Anonymous)</label>
+                            <input type="text" name="complainant_name" class="form-control" placeholder="e.g. Citizen">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Mobile / Email (For Status Updates)</label>
+                            <input type="text" name="complainant_contact" class="form-control" placeholder="e.g. +91 98765 43210">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Evidence Photo (Optional)</label>
+                        <input type="file" name="evidence_file" class="form-control" accept="image/*">
+                        <div class="form-text small">Upload an authentic photo of the site condition. File will be verified for inspection.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between border-top pt-3">
+                        <a href="{{ url_for('contractors.complaints_list') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-warning fw-bold px-4">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Submit Grievance
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function captureLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            document.getElementById('gps_lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('gps_lng').value = pos.coords.longitude.toFixed(6);
+        }, function(err) {
+            alert("Could not retrieve geolocation: " + err.message);
+        });
+    } else {
+        alert("Geolocation is not supported by your browser.");
+    }
+}
+</script>
+{% endblock %}

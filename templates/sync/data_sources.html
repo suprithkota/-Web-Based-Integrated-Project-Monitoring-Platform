@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Official Data Sources & Continuous Synchronization — ProjectPulse AI{% endblock %}
+{% block header_title %}Official Government Data Connectors & Synchronization{% endblock %}
+{% block breadcrumb %}Central & State Procurement Integrations, Webhooks & Automated Polling{% endblock %}
+
+{% block content %}
+<!-- Telemetry Banner -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-network-wired text-primary fs-3"></i>
+        <div>
+            <div class="fw-bold">Connected Official Government Portals & Adapters</div>
+            <small class="text-muted">
+                CPPP (Central Procurement) &bull; State PWD E-Portals &bull; Jal Jeevan Mission Systems &bull; Municipal GIS &bull; MoRTH PMIS
+            </small>
+        </div>
+    </div>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('data_sync.new_data_source') }}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-plus me-1"></i> Register New Data Source
+    </a>
+    {% endif %}
+</div>
+
+<!-- Telemetry Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small">Connected Portals</span>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ connected_sources }} / {{ total_sources }}</div>
+            <small class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Active Connections</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small">Live Records Ingested</span>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ total_imported }}</div>
+            <small class="text-muted">Across All Department Feeds</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small">Automated Updates</span>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ total_updated }}</div>
+            <small class="text-info"><i class="fa-solid fa-rotate me-1"></i> Version-Controlled</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <span class="text-muted small">Unresolved Conflicts</span>
+            <div class="fs-4 fw-bold {% if unresolved_conflicts > 0 %}text-warning{% else %}text-success{% endif %} mt-1">
+                {{ unresolved_conflicts }}
+            </div>
+            <small>
+                <a href="{{ url_for('data_sync.data_conflicts') }}" class="text-decoration-none">
+                    Conflict Center <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Configured Data Sources Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-server text-primary me-2"></i>Official Government Data Sources & Connectors ({{ sources|length }})</h5>
+        <a href="{{ url_for('data_sync.sync_logs') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Audit Sync Logs
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Source Name / Department</th>
+                    <th>Integration Type</th>
+                    <th>Sync Frequency</th>
+                    <th>Status</th>
+                    <th>Last Successful Sync</th>
+                    <th>Records Stats</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sources %}
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">{{ s.source_name }}</div>
+                        <small class="text-muted">{{ s.department or 'Government Portal' }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ s.source_type }}</span>
+                        <div class="small text-muted">{{ s.sync_method }}</div>
+                    </td>
+                    <td class="small">{{ s.sync_frequency }}</td>
+                    <td>
+                        {% if s.connection_status == 'Connected' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="fa-solid fa-circle-check me-1"></i> Connected
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            <i class="fa-solid fa-circle-xmark me-1"></i> {{ s.connection_status }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">
+                        {{ s.last_successful_sync.strftime('%d-%b-%Y %H:%M') if s.last_successful_sync else 'Pending First Sync' }}
+                    </td>
+                    <td class="small">
+                        <span class="text-success fw-semibold">+{{ s.records_imported }} New</span> &bull; 
+                        <span class="text-primary fw-semibold">{{ s.records_updated }} Updated</span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <form method="POST" action="{{ url_for('data_sync.sync_now', source_id=s.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-primary" title="Trigger Synchronize Now">
+                                    <i class="fa-solid fa-rotate"></i> Sync
+                                </button>
+                            </form>
+                            {% if current_user.is_admin %}
+                            <a href="{{ url_for('data_sync.edit_data_source', source_id=s.id) }}" class="btn btn-outline-secondary" title="Configure Connector">
+                                <i class="fa-solid fa-gear"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No data sources configured.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent Sync Activity Logs -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-list-check text-primary me-2"></i>Recent Synchronization Operations</h5>
+        <a href="{{ url_for('data_sync.sync_logs') }}" class="btn btn-sm btn-outline-primary">View All Logs</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Sync ID</th>
+                    <th>Source</th>
+                    <th>Trigger</th>
+                    <th>Timestamp</th>
+                    <th>Duration</th>
+                    <th>Received / Ingested / Updated</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td class="font-monospace small fw-bold">{{ log.sync_id }}</td>
+                    <td class="small">{{ log.source_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ log.trigger_type }}</span></td>
+                    <td class="small text-muted">{{ log.request_time.strftime('%d-%b-%Y %H:%M:%S') if log.request_time else '' }}</td>
+                    <td class="small text-muted">{{ log.response_time_ms }} ms</td>
+                    <td class="small">
+                        {{ log.records_received }} recs &bull; 
+                        <span class="text-success">+{{ log.records_inserted }}</span> &bull; 
+                        <span class="text-primary">~{{ log.records_updated }}</span>
+                    </td>
+                    <td>
+                        <span class="badge {% if log.status == 'SUCCESS' %}bg-success{% elif log.status == 'PARTIAL' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ log.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No sync activity logged yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

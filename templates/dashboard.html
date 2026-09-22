@@ -6,394 +6,240 @@
 
 {% block content %}
 <!-- Filter Bar -->
-<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-    <div class="card-body p-3">
-        <form method="GET" action="{{ url_for('dashboard.index') }}" class="row g-2 align-items-center">
-            <div class="col-md-3">
-                <label class="form-label small text-muted mb-1 fw-bold text-uppercase">Ministry</label>
-                <select name="ministry" class="form-select form-select-sm">
-                    <option value="">All Ministries ({{ ministries|length }})</option>
-                    {% for m in ministries %}
-                    <option value="{{ m }}" {% if active_filters.ministry == m %}selected{% endif %}>{{ m }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted mb-1 fw-bold text-uppercase">Sector</label>
-                <select name="sector" class="form-select form-select-sm">
-                    <option value="">All Sectors ({{ sectors|length }})</option>
-                    {% for s in sectors %}
-                    <option value="{{ s }}" {% if active_filters.sector == s %}selected{% endif %}>{{ s }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted mb-1 fw-bold text-uppercase">State</label>
-                <select name="state" class="form-select form-select-sm">
-                    <option value="">All States ({{ states|length }})</option>
-                    {% for st in states %}
-                    <option value="{{ st }}" {% if active_filters.state == st %}selected{% endif %}>{{ st }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small text-muted mb-1 fw-bold text-uppercase">Risk Level</label>
-                <select name="risk_level" class="form-select form-select-sm">
-                    <option value="">All Risk Levels</option>
-                    <option value="CRITICAL" {% if active_filters.risk_level == 'CRITICAL' %}selected{% endif %}>🔴 Critical Risk</option>
-                    <option value="HIGH" {% if active_filters.risk_level == 'HIGH' %}selected{% endif %}>🟠 High Risk</option>
-                    <option value="MEDIUM" {% if active_filters.risk_level == 'MEDIUM' %}selected{% endif %}>🟡 Medium Risk</option>
-                    <option value="LOW" {% if active_filters.risk_level == 'LOW' %}selected{% endif %}>🟢 Low Risk</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end gap-2">
-                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                    <i class="fa-solid fa-filter me-1"></i> Apply Filter
-                </button>
-                <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
-                    <i class="fa-solid fa-rotate-left"></i>
-                </a>
-            </div>
-        </form>
+<div class="filter-card mb-4">
+    <form method="GET" action="{{ url_for('dashboard.index') }}" class="row g-2 align-items-end">
+        <div class="col-lg-3 col-md-6">
+            <label class="filter-label"><i class="fa-solid fa-building-columns me-1"></i> Ministry</label>
+            <select name="ministry" class="form-select filter-select">
+                <option value="">All Ministries ({{ ministries|length }})</option>
+                {% for m in ministries %}
+                <option value="{{ m }}" {% if active_filters.ministry == m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="filter-label"><i class="fa-solid fa-industry me-1"></i> Sector</label>
+            <select name="sector" class="form-select filter-select">
+                <option value="">All Sectors ({{ sectors|length }})</option>
+                {% for s in sectors %}
+                <option value="{{ s }}" {% if active_filters.sector == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
+            <label class="filter-label"><i class="fa-solid fa-map-pin me-1"></i> State</label>
+            <select name="state" class="form-select filter-select">
+                <option value="">All States ({{ states|length }})</option>
+                {% for st in states %}
+                <option value="{{ st }}" {% if active_filters.state == st %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
+            <label class="filter-label"><i class="fa-solid fa-shield-halved me-1"></i> Risk Level</label>
+            <select name="risk_level" class="form-select filter-select">
+                <option value="">All Risk Tiers</option>
+                <option value="CRITICAL" {% if active_filters.risk_level == 'CRITICAL' %}selected{% endif %}>🔴 Critical Risk</option>
+                <option value="HIGH" {% if active_filters.risk_level == 'HIGH' %}selected{% endif %}>🟠 High Risk</option>
+                <option value="MEDIUM" {% if active_filters.risk_level == 'MEDIUM' %}selected{% endif %}>🟡 Medium Risk</option>
+                <option value="LOW" {% if active_filters.risk_level == 'LOW' %}selected{% endif %}>🟢 Low Risk</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1 shadow-sm" style="height: 36px;">
+                <i class="fa-solid fa-filter"></i> <span>Filter</span>
+            </button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="height: 36px; width: 38px;" title="Reset All Filters">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+        </div>
+    </form>
+
+    {% if active_filters.ministry or active_filters.sector or active_filters.state or active_filters.risk_level %}
+    <div class="d-flex flex-wrap align-items-center gap-2 pt-3 mt-3 border-top border-light">
+        <span class="small text-muted fw-semibold me-1"><i class="fa-solid fa-sliders me-1"></i> Active Filters:</span>
+        {% if active_filters.ministry %}
+        <span class="filter-chip">
+            Ministry: <strong>{{ active_filters.ministry }}</strong>
+            <a href="{{ url_for('dashboard.index', sector=active_filters.sector, state=active_filters.state, risk_level=active_filters.risk_level) }}" class="chip-remove" title="Remove filter">&times;</a>
+        </span>
+        {% endif %}
+        {% if active_filters.sector %}
+        <span class="filter-chip">
+            Sector: <strong>{{ active_filters.sector }}</strong>
+            <a href="{{ url_for('dashboard.index', ministry=active_filters.ministry, state=active_filters.state, risk_level=active_filters.risk_level) }}" class="chip-remove" title="Remove filter">&times;</a>
+        </span>
+        {% endif %}
+        {% if active_filters.state %}
+        <span class="filter-chip">
+            State: <strong>{{ active_filters.state }}</strong>
+            <a href="{{ url_for('dashboard.index', ministry=active_filters.ministry, sector=active_filters.sector, risk_level=active_filters.risk_level) }}" class="chip-remove" title="Remove filter">&times;</a>
+        </span>
+        {% endif %}
+        {% if active_filters.risk_level %}
+        <span class="filter-chip">
+            Risk: <strong>{{ active_filters.risk_level }}</strong>
+            <a href="{{ url_for('dashboard.index', ministry=active_filters.ministry, sector=active_filters.sector, state=active_filters.state) }}" class="chip-remove" title="Remove filter">&times;</a>
+        </span>
+        {% endif %}
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-link btn-sm text-danger text-decoration-none py-0 ms-auto small fw-semibold">
+            <i class="fa-solid fa-filter-circle-xmark me-1"></i> Clear All
+        </a>
     </div>
+    {% endif %}
 </div>
 
-<!-- Top Health Indicators (8 Specific Primary Indicators) -->
+<!-- Top Executive Health Indicators (8 Equal-Height Primary Indicators) -->
 <div class="row g-3 mb-3">
-    <!-- 1. 🟢 Projects on Track -->
+    <!-- 1. Projects on Track -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card kpi-low h-100 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label text-success fw-bold">
-                        <i class="fa-solid fa-circle text-success me-1"></i> Projects on Track
-                    </div>
-                    <div class="kpi-value text-success">{{ kpis.projects_on_track }}</div>
-                    <div class="kpi-subtext text-muted">
-                        Operating within scheduled milestones & budget
+        <div class="kpi-card kpi-ontrack h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Projects On Track</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-circle-check"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-success bg-opacity-10 text-success fs-3">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
+                <div class="kpi-value">{{ kpis.projects_on_track }}</div>
+            </div>
+            <div class="kpi-subtext">
+                Operating within scheduled milestones & budget
             </div>
         </div>
     </div>
 
-    <!-- 2. 🟡 Projects At Risk -->
+    <!-- 2. Projects At Risk -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card kpi-high h-100 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label text-warning-emphasis fw-bold">
-                        <i class="fa-solid fa-circle text-warning me-1"></i> Projects At Risk
-                    </div>
-                    <div class="kpi-value text-warning-emphasis">{{ kpis.projects_at_risk }}</div>
-                    <div class="kpi-subtext text-muted">
-                        High ({{ kpis.high_risk_projects }}) + Medium ({{ kpis.medium_risk_projects }}) watch
+        <div class="kpi-card kpi-atrisk h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Projects At Risk</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-warning bg-opacity-10 text-warning-emphasis fs-3">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
+                <div class="kpi-value">{{ kpis.projects_at_risk }}</div>
+            </div>
+            <div class="kpi-subtext">
+                High ({{ kpis.high_risk_projects }}) + Medium ({{ kpis.medium_risk_projects }}) surveillance
             </div>
         </div>
     </div>
 
-    <!-- 3. 🔴 Critical Projects -->
+    <!-- 3. Critical Projects -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card kpi-critical h-100 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label text-danger fw-bold">
-                        <i class="fa-solid fa-circle text-danger me-1"></i> Critical Projects
-                    </div>
-                    <div class="kpi-value text-danger">{{ kpis.critical_projects }}</div>
-                    <div class="kpi-subtext">
-                        <a href="{{ url_for('projects.index', risk_level='CRITICAL') }}" class="text-danger fw-semibold text-decoration-none">
-                            Immediate intervention <i class="fa-solid fa-arrow-right ms-1"></i>
-                        </a>
+        <div class="kpi-card kpi-critical h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Critical Projects</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-circle-radiation"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-danger bg-opacity-10 text-danger fs-3">
-                    <i class="fa-solid fa-circle-radiation"></i>
-                </div>
+                <div class="kpi-value">{{ kpis.critical_projects }}</div>
+            </div>
+            <div class="kpi-subtext">
+                <a href="{{ url_for('projects.index', risk_level='CRITICAL') }}" class="text-danger fw-semibold text-decoration-none">
+                    Requires immediate action <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- 4. ⏰ Delayed Projects -->
+    <!-- 4. Delayed Projects -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card h-100 shadow-sm border-0" style="border-left: 4px solid #f97316 !important;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label fw-bold" style="color: #ea580c;">
-                        <i class="fa-solid fa-clock text-warning me-1"></i> Delayed Projects
-                    </div>
-                    <div class="kpi-value" style="color: #ea580c;">{{ kpis.delayed_projects }}</div>
-                    <div class="kpi-subtext text-muted">
-                        Avg portfolio delay: {{ kpis.avg_delay_days|int }} days
+        <div class="kpi-card kpi-delayed h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Delayed Projects</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-opacity-10 fs-3" style="background-color: rgba(249, 115, 22, 0.1); color: #ea580c;">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-                </div>
+                <div class="kpi-value">{{ kpis.delayed_projects }}</div>
+            </div>
+            <div class="kpi-subtext">
+                Avg portfolio schedule delay: {{ kpis.avg_delay_days|int }} days
             </div>
         </div>
     </div>
 </div>
 
 <div class="row g-3 mb-4">
-    <!-- 5. 📊 Overall Progress -->
+    <!-- 5. Overall Progress -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card h-100 shadow-sm border-0" style="border-left: 4px solid #2563eb !important;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="w-100 pe-2">
-                    <div class="kpi-label text-primary fw-bold">
-                        <i class="fa-solid fa-chart-line me-1"></i> Overall Progress
-                    </div>
-                    <div class="kpi-value text-primary">{{ kpis.avg_physical_progress }}%</div>
-                    <div class="kpi-subtext text-muted">
-                        Target: {{ kpis.avg_planned_progress }}% (Lag: {{ kpis.avg_progress_gap }}%)
-                    </div>
-                    <div class="progress mt-2" style="height: 5px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ kpis.avg_physical_progress }}%;" aria-valuenow="{{ kpis.avg_physical_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+        <div class="kpi-card kpi-progress h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Overall Progress</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-bars-progress"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-primary bg-opacity-10 text-primary fs-3 ms-2">
-                    <i class="fa-solid fa-bars-progress"></i>
+                <div class="kpi-value">{{ kpis.avg_physical_progress }}%</div>
+            </div>
+            <div>
+                <div class="kpi-subtext">
+                    Target: {{ kpis.avg_planned_progress }}% &bull; Lag: {{ kpis.avg_progress_gap }}%
+                </div>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ kpis.avg_physical_progress }}%;" aria-valuenow="{{ kpis.avg_physical_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 6. 💰 Budget Utilization -->
+    <!-- 6. Budget Utilization -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card h-100 shadow-sm border-0" style="border-left: 4px solid #0284c7 !important;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label fw-bold" style="color: #0284c7;">
-                        <i class="fa-solid fa-vault me-1"></i> Budget Utilization
-                    </div>
-                    <div class="kpi-value" style="color: #0284c7;">{{ kpis.expenditure_utilization_pct }}%</div>
-                    <div class="kpi-subtext text-muted">
-                        {{ kpis.total_expenditure|inr }} of {{ kpis.total_approved_cost|inr }}
+        <div class="kpi-card kpi-budget h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Budget Utilization</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-vault"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-opacity-10 fs-3" style="background-color: rgba(2, 132, 199, 0.1); color: #0284c7;">
-                    <i class="fa-solid fa-wallet"></i>
-                </div>
+                <div class="kpi-value">{{ kpis.expenditure_utilization_pct }}%</div>
+            </div>
+            <div class="kpi-subtext">
+                {{ kpis.total_expenditure|inr }} of {{ kpis.total_approved_cost|inr }}
             </div>
         </div>
     </div>
 
-    <!-- 7. 🚨 Early-Warning Alerts -->
+    <!-- 7. Early-Warning Alerts -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card kpi-critical h-100 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label text-danger fw-bold">
-                        <i class="fa-solid fa-bell text-danger me-1"></i> Early-Warning Alerts
-                    </div>
-                    <div class="kpi-value text-danger">{{ kpis.open_alerts_count }}</div>
-                    <div class="kpi-subtext text-muted">
-                        <span class="text-danger fw-semibold">{{ kpis.critical_alerts_count }} Critical</span> active warnings
+        <div class="kpi-card kpi-alerts h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">Early-Warning Alerts</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-bell"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-danger bg-opacity-10 text-danger fs-3">
-                    <i class="fa-solid fa-bell"></i>
-                </div>
+                <div class="kpi-value">{{ kpis.open_alerts_count }}</div>
+            </div>
+            <div class="kpi-subtext">
+                <span class="text-danger fw-bold">{{ kpis.critical_alerts_count }} Critical</span> active warnings
             </div>
         </div>
     </div>
 
-    <!-- 8. 🤖 AI Recommendations -->
+    <!-- 8. AI Recommendations -->
     <div class="col-xl-3 col-md-6">
-        <div class="kpi-card h-100 shadow-sm border-0" style="border-left: 4px solid #7c3aed !important;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="kpi-label fw-bold" style="color: #7c3aed;">
-                        <i class="fa-solid fa-brain text-purple me-1"></i> AI Recommendations
-                    </div>
-                    <div class="kpi-value" style="color: #7c3aed;">{{ recommendations|length }}</div>
-                    <div class="kpi-subtext text-muted">
-                        Grounded prescriptive interventions
+        <div class="kpi-card kpi-ai h-100">
+            <div>
+                <div class="kpi-header">
+                    <span class="kpi-label">AI Recommendations</span>
+                    <div class="kpi-icon-box">
+                        <i class="fa-solid fa-microchip"></i>
                     </div>
                 </div>
-                <div class="rounded-3 p-3 bg-opacity-10 fs-3" style="background-color: rgba(124, 58, 237, 0.1); color: #7c3aed;">
-                    <i class="fa-solid fa-microchip"></i>
-                </div>
+                <div class="kpi-value">{{ recommendations|length }}</div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Prominent Early-Warning Alerts & AI Recommendations Sections -->
-<div class="row g-4 mb-4">
-    <!-- Early-Warning Alerts Panel -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100 shadow-sm border-0">
-            <div class="panel-header d-flex justify-content-between align-items-center bg-white border-bottom p-3">
-                <div>
-                    <h3 class="panel-title text-danger mb-0 fw-bold fs-6">
-                        <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i> Early-Warning Alerts
-                    </h3>
-                    <div class="small text-muted mt-1 d-flex flex-wrap align-items-center gap-1">
-                        <span class="badge bg-danger text-white" style="font-size: 0.68rem;">🔴 Critical</span>
-                        <span class="badge text-white" style="background-color: #ea580c; font-size: 0.68rem;">🟠 High</span>
-                        <span class="badge bg-warning text-dark" style="font-size: 0.68rem;">🟡 Medium</span>
-                        <span class="badge bg-success text-white" style="font-size: 0.68rem;">🟢 Low</span>
-                    </div>
-                </div>
-                <a href="{{ url_for('alerts.index') }}" class="btn btn-outline-danger btn-sm px-3 fw-semibold">
-                    View All ({{ kpis.open_alerts_count }}) <i class="fa-solid fa-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="panel-body p-3" style="max-height: 520px; overflow-y: auto;">
-                {% if alerts %}
-                    <div class="d-flex flex-column gap-3">
-                        {% for alert in alerts %}
-                        <div class="p-3 rounded-3 border-start border-4 bg-light bg-opacity-50 {% if alert.severity == 'CRITICAL' %}border-danger shadow-sm{% elif alert.severity == 'HIGH' %}border-warning{% elif alert.severity == 'MEDIUM' %}border-warning{% else %}border-success{% endif %}">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <div class="d-flex flex-wrap align-items-center gap-1">
-                                    {% if alert.severity == 'CRITICAL' %}
-                                        <span class="badge bg-danger text-white"><i class="fa-solid fa-circle-radiation me-1"></i> 🔴 Critical</span>
-                                    {% elif alert.severity == 'HIGH' %}
-                                        <span class="badge text-white" style="background-color: #ea580c;"><i class="fa-solid fa-triangle-exclamation me-1"></i> 🟠 High</span>
-                                    {% elif alert.severity == 'MEDIUM' %}
-                                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-circle-exclamation me-1"></i> 🟡 Medium</span>
-                                    {% else %}
-                                        <span class="badge bg-success text-white"><i class="fa-solid fa-circle-check me-1"></i> 🟢 Low</span>
-                                    {% endif %}
-
-                                    {% if 'delay' in alert.alert_type|lower or 'schedule' in alert.alert_type|lower %}
-                                        <span class="badge bg-light text-danger border"><i class="fa-solid fa-clock me-1"></i> Schedule Delay</span>
-                                    {% elif 'cost' in alert.alert_type|lower or 'budget' in alert.alert_type|lower or 'expenditure' in alert.alert_type|lower %}
-                                        <span class="badge bg-light text-warning-emphasis border"><i class="fa-solid fa-coins me-1"></i> Budget Concern</span>
-                                    {% elif 'progress' in alert.alert_type|lower or 'lag' in alert.alert_type|lower %}
-                                        <span class="badge bg-light text-primary border"><i class="fa-solid fa-chart-line me-1"></i> Low Progress</span>
-                                    {% elif 'milestone' in alert.alert_type|lower %}
-                                        <span class="badge bg-light text-dark border"><i class="fa-solid fa-flag me-1"></i> Missed Milestone</span>
-                                    {% else %}
-                                        <span class="badge bg-light text-secondary border">{{ alert.alert_type }}</span>
-                                    {% endif %}
-
-                                    {% if alert.project and alert.project.risk_level == 'CRITICAL' %}
-                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="fa-solid fa-shield-halved me-1"></i> Critical Project</span>
-                                    {% endif %}
-                                </div>
-                                <span class="small text-muted" style="font-size: 0.72rem;">{{ alert.created_at.strftime('%d %b %H:%M') if alert.created_at else 'Active' }}</span>
-                            </div>
-
-                            <div class="fw-bold text-dark small mt-1 mb-1">
-                                {{ alert.title }}
-                            </div>
-
-                            {% if alert.project %}
-                            <div class="small mb-2">
-                                <a href="{{ url_for('projects.detail', project_id=alert.project.id) }}" class="text-primary text-decoration-none fw-semibold">
-                                    <i class="fa-solid fa-diagram-project me-1"></i> {{ alert.project.project_name }}
-                                </a>
-                                <span class="text-muted ms-1">({{ alert.project.project_code }}) &bull; {{ alert.project.ministry }}</span>
-                            </div>
-                            {% endif %}
-
-                            <p class="small text-secondary mb-2" style="line-height: 1.35;">
-                                {{ alert.description }}
-                            </p>
-
-                            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light">
-                                <span class="small text-muted" style="font-size: 0.75rem;">
-                                    Metric: <strong class="text-dark">{{ alert.metric_value }}</strong> &bull; Threshold: <strong>{{ alert.threshold_value }}</strong>
-                                </span>
-                                <a href="{{ url_for('alerts.index', project_id=alert.project_id) if alert.project_id else url_for('alerts.index') }}" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.75rem;">
-                                    Review Alert <i class="fa-solid fa-arrow-right ms-1"></i>
-                                </a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-circle-check text-success fs-1 mb-2"></i>
-                        <p class="mb-0">No active early-warning alerts for selected filters.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- AI Recommendations Panel -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100 shadow-sm border-0">
-            <div class="panel-header d-flex justify-content-between align-items-center bg-white border-bottom p-3">
-                <div>
-                    <h3 class="panel-title text-primary mb-0 fw-bold fs-6">
-                        <i class="fa-solid fa-brain text-primary me-2"></i> AI Recommendations
-                    </h3>
-                    <div class="small text-muted mt-1">
-                        Concise, actionable interventions grounded in live database metrics
-                    </div>
-                </div>
-                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-2 py-1">
-                    <i class="fa-solid fa-bolt me-1"></i> Live Intelligence
-                </span>
-            </div>
-            <div class="panel-body p-3" style="max-height: 520px; overflow-y: auto;">
-                {% if recommendations %}
-                    <div class="d-flex flex-column gap-3">
-                        {% for rec in recommendations %}
-                        <div class="p-3 rounded-3 border-start border-4 border-primary bg-light bg-opacity-50">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <div class="d-flex flex-wrap align-items-center gap-1">
-                                    <span class="badge bg-primary"><i class="fa-solid fa-lightbulb me-1"></i> {{ rec.category }}</span>
-                                    {% if rec.priority == 'CRITICAL' or rec.priority == 'HIGH' %}
-                                        <span class="badge bg-danger">Priority: {{ rec.priority }}</span>
-                                    {% else %}
-                                        <span class="badge bg-warning text-dark">Priority: {{ rec.priority }}</span>
-                                    {% endif %}
-                                    <span class="badge bg-light text-secondary border">{{ rec.sector }} &bull; {{ rec.state }}</span>
-                                </div>
-                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger small">
-                                    Risk {{ rec.risk_score }}/100
-                                </span>
-                            </div>
-
-                            <!-- Grounded Recommendation Statement -->
-                            <div class="alert alert-primary bg-white border-primary border-opacity-25 py-2 px-3 my-2 mb-2 rounded-2">
-                                <div class="fw-bold text-dark small mb-1">
-                                    <i class="fa-solid fa-bullhorn text-primary me-1"></i> Recommended Action:
-                                </div>
-                                <p class="small text-dark mb-0 fw-semibold" style="line-height: 1.4;">
-                                    {{ rec.summary_statement }}
-                                </p>
-                            </div>
-
-                            <div class="small text-secondary mb-2" style="font-size: 0.8rem; line-height: 1.35;">
-                                {{ rec.detail }}
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light">
-                                <div class="d-flex flex-wrap gap-2 small text-muted" style="font-size: 0.75rem;">
-                                    <span><i class="fa-solid fa-clock me-1 text-danger"></i> {{ rec.delay_days }}d delay</span>
-                                    <span><i class="fa-solid fa-chart-line me-1 text-primary"></i> {{ rec.progress_gap }}% gap</span>
-                                    {% if rec.cost_escalation > 0 %}
-                                    <span><i class="fa-solid fa-coins me-1 text-warning"></i> +{{ rec.cost_escalation|inr }}</span>
-                                    {% endif %}
-                                </div>
-                                <a href="{{ url_for('projects.detail', project_id=rec.project_id) }}" class="btn btn-primary btn-sm py-0 px-2" style="font-size: 0.75rem; background-color: #1d3557; border-color: #1d3557;">
-                                    View Intel <i class="fa-solid fa-arrow-right ms-1"></i>
-                                </a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-check-double text-success fs-1 mb-2"></i>
-                        <p class="mb-0">All high-risk projects operating within manageable parameters.</p>
-                    </div>
-                {% endif %}
+            <div class="kpi-subtext">
+                Grounded prescriptive interventions
             </div>
         </div>
     </div>
@@ -402,31 +248,201 @@
 <!-- Secondary Financial / Portfolio Baseline Outlay -->
 <div class="row g-3 mb-4">
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="small text-muted text-uppercase fw-bold">Approved Capital Outlay</div>
-            <div class="fs-4 fw-bold text-dark mt-1">{{ kpis.total_approved_cost|inr }}</div>
+        <div class="outlay-card h-100">
+            <div class="outlay-label">Sanctioned Capital Outlay</div>
+            <div class="outlay-value text-dark">{{ kpis.total_approved_cost|inr }}</div>
             <div class="small text-muted mt-1">Baseline sanctioned allocation</div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="small text-muted text-uppercase fw-bold">Total Expenditure</div>
-            <div class="fs-4 fw-bold text-primary mt-1">{{ kpis.total_expenditure|inr }}</div>
-            <div class="small text-muted mt-1">Disbursement utilization: {{ kpis.expenditure_utilization_pct }}%</div>
+        <div class="outlay-card h-100">
+            <div class="outlay-label">Total Expenditure</div>
+            <div class="outlay-value text-primary">{{ kpis.total_expenditure|inr }}</div>
+            <div class="small text-muted mt-1">Disbursement utilization: <strong>{{ kpis.expenditure_utilization_pct }}%</strong></div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="small text-muted text-uppercase fw-bold">Cumulative Cost Escalation</div>
-            <div class="fs-4 fw-bold text-danger mt-1">+{{ kpis.total_cost_escalation|inr }}</div>
-            <div class="small text-danger mt-1">+{{ kpis.total_cost_escalation_pct }}% over original baseline</div>
+        <div class="outlay-card h-100">
+            <div class="outlay-label">Cumulative Cost Escalation</div>
+            <div class="outlay-value text-danger">+{{ kpis.total_cost_escalation|inr }}</div>
+            <div class="small text-danger mt-1 fw-semibold">+{{ kpis.total_cost_escalation_pct }}% over original baseline</div>
         </div>
     </div>
     <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="small text-muted text-uppercase fw-bold">Portfolio Health Index</div>
-            <div class="fs-4 fw-bold text-success mt-1">{{ kpis.avg_health_score }} <span class="fs-6 text-muted">/100</span></div>
-            <div class="small text-muted mt-1">Average Risk Score: {{ kpis.avg_risk_score }}/100</div>
+        <div class="outlay-card h-100">
+            <div class="outlay-label">Portfolio Health Index</div>
+            <div class="outlay-value text-success">{{ kpis.avg_health_score }} <span class="fs-6 text-muted fw-normal">/ 100</span></div>
+            <div class="small text-muted mt-1">Average Portfolio Risk: <strong>{{ kpis.avg_risk_score }}/100</strong></div>
+        </div>
+    </div>
+</div>
+
+<!-- Prominent Early-Warning Alerts & AI Recommendations Sections -->
+<div class="row g-4 mb-4">
+    <!-- Early-Warning Alerts Panel -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <div>
+                    <h3 class="panel-title text-danger">
+                        <i class="fa-solid fa-triangle-exclamation text-danger"></i> Early-Warning Alert Center
+                    </h3>
+                    <div class="small text-muted mt-1 d-flex flex-wrap align-items-center gap-1">
+                        <span class="badge-risk badge-risk-critical">Critical</span>
+                        <span class="badge-risk badge-risk-high">High</span>
+                        <span class="badge-risk badge-risk-medium">Medium</span>
+                        <span class="badge-risk badge-risk-low">Low</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('alerts.index') }}" class="btn btn-outline-danger btn-sm px-3 fw-semibold">
+                    View All ({{ kpis.open_alerts_count }}) <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="panel-scrollable">
+                {% if alerts %}
+                    {% for alert in alerts %}
+                    <div class="alert-card-item sev-{{ alert.severity|lower }}">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="d-flex flex-wrap align-items-center gap-1">
+                                {% if alert.severity == 'CRITICAL' %}
+                                    <span class="badge-risk badge-risk-critical"><i class="fa-solid fa-circle-radiation"></i> Critical</span>
+                                {% elif alert.severity == 'HIGH' %}
+                                    <span class="badge-risk badge-risk-high"><i class="fa-solid fa-triangle-exclamation"></i> High</span>
+                                {% elif alert.severity == 'MEDIUM' %}
+                                    <span class="badge-risk badge-risk-medium"><i class="fa-solid fa-circle-exclamation"></i> Medium</span>
+                                {% else %}
+                                    <span class="badge-risk badge-risk-low"><i class="fa-solid fa-circle-check"></i> Low</span>
+                                {% endif %}
+
+                                {% if 'delay' in alert.alert_type|lower or 'schedule' in alert.alert_type|lower %}
+                                    <span class="badge bg-light text-danger border"><i class="fa-solid fa-clock me-1"></i> Schedule Delay</span>
+                                {% elif 'cost' in alert.alert_type|lower or 'budget' in alert.alert_type|lower or 'expenditure' in alert.alert_type|lower %}
+                                    <span class="badge bg-light text-warning-emphasis border"><i class="fa-solid fa-coins me-1"></i> Budget Concern</span>
+                                {% elif 'progress' in alert.alert_type|lower or 'lag' in alert.alert_type|lower %}
+                                    <span class="badge bg-light text-primary border"><i class="fa-solid fa-chart-line me-1"></i> Low Progress</span>
+                                {% elif 'milestone' in alert.alert_type|lower %}
+                                    <span class="badge bg-light text-dark border"><i class="fa-solid fa-flag me-1"></i> Missed Milestone</span>
+                                {% else %}
+                                    <span class="badge bg-light text-secondary border">{{ alert.alert_type }}</span>
+                                {% endif %}
+
+                                {% if alert.project and alert.project.risk_level == 'CRITICAL' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="fa-solid fa-shield-halved me-1"></i> Critical Project</span>
+                                {% endif %}
+                            </div>
+                            <span class="small text-muted font-monospace" style="font-size: 0.72rem;">{{ alert.created_at.strftime('%d %b %H:%M') if alert.created_at else 'Active' }}</span>
+                        </div>
+
+                        <div class="fw-bold text-dark small mt-2 mb-1">
+                            {{ alert.title }}
+                        </div>
+
+                        {% if alert.project %}
+                        <div class="small mb-2">
+                            <a href="{{ url_for('projects.detail', project_id=alert.project.id) }}" class="text-primary text-decoration-none fw-semibold">
+                                <i class="fa-solid fa-diagram-project me-1"></i> {{ alert.project.project_name }}
+                            </a>
+                            <span class="text-muted ms-1 font-monospace">({{ alert.project.project_code }})</span>
+                            <span class="text-muted ms-1">&bull; {{ alert.project.ministry }}</span>
+                        </div>
+                        {% endif %}
+
+                        <p class="small text-secondary mb-2" style="line-height: 1.4;">
+                            {{ alert.description }}
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light">
+                            <span class="small text-muted" style="font-size: 0.75rem;">
+                                Metric: <strong class="text-dark">{{ alert.metric_value }}</strong> &bull; Threshold: <strong>{{ alert.threshold_value }}</strong>
+                            </span>
+                            <a href="{{ url_for('alerts.index', project_id=alert.project_id) if alert.project_id else url_for('alerts.index') }}" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                Review Alert <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-circle-check text-success fs-1 mb-2"></i>
+                        <p class="mb-0 fw-semibold">No active early-warning alerts for selected filters.</p>
+                        <span class="small">All telemetry indicators are operating within acceptable thresholds.</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Recommendations Panel -->
+    <div class="col-lg-6">
+        <div class="dashboard-panel h-100">
+            <div class="panel-header">
+                <div>
+                    <h3 class="panel-title text-primary">
+                        <i class="fa-solid fa-brain text-primary"></i> Grounded AI Recommendations
+                    </h3>
+                    <div class="small text-muted mt-1">
+                        Prescriptive interventions deterministically derived from live ground telemetry
+                    </div>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 font-monospace" style="font-size: 0.72rem;">
+                    <i class="fa-solid fa-bolt me-1"></i> Live Engine
+                </span>
+            </div>
+            <div class="panel-scrollable">
+                {% if recommendations %}
+                    {% for rec in recommendations %}
+                    <div class="rec-card-item">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="d-flex flex-wrap align-items-center gap-1">
+                                <span class="badge bg-primary"><i class="fa-solid fa-lightbulb me-1"></i> {{ rec.category }}</span>
+                                {% if rec.priority == 'CRITICAL' or rec.priority == 'HIGH' %}
+                                    <span class="badge bg-danger">Priority: {{ rec.priority }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Priority: {{ rec.priority }}</span>
+                                {% endif %}
+                                <span class="badge bg-light text-secondary border">{{ rec.sector }} &bull; {{ rec.state }}</span>
+                            </div>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace small">
+                                Risk {{ rec.risk_score }}/100
+                            </span>
+                        </div>
+
+                        <!-- Grounded Recommendation Statement -->
+                        <div class="grounded-rec-box">
+                            <div class="fw-bold text-dark small mb-1">
+                                <i class="fa-solid fa-bullhorn text-primary me-1"></i> Recommended Executive Action:
+                            </div>
+                            <p class="small text-dark mb-0 fw-semibold" style="line-height: 1.45;">
+                                {{ rec.summary_statement }}
+                            </p>
+                        </div>
+
+                        <div class="small text-secondary mb-2" style="font-size: 0.82rem; line-height: 1.4;">
+                            {{ rec.detail }}
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light">
+                            <div class="d-flex flex-wrap gap-2 small text-muted" style="font-size: 0.75rem;">
+                                <span><i class="fa-solid fa-clock me-1 text-danger"></i> <strong>{{ rec.delay_days }}d</strong> delay</span>
+                                <span><i class="fa-solid fa-chart-line me-1 text-primary"></i> <strong>{{ rec.progress_gap }}%</strong> lag</span>
+                                {% if rec.cost_escalation > 0 %}
+                                <span><i class="fa-solid fa-coins me-1 text-warning"></i> +{{ rec.cost_escalation|inr }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="{{ url_for('projects.detail', project_id=rec.project_id) }}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+                                View Intel <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-check-double text-success fs-1 mb-2"></i>
+                        <p class="mb-0 fw-semibold">No high-risk project bottlenecks detected.</p>
+                        <span class="small">All projects operating within permissible operational parameters.</span>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -438,28 +454,28 @@
         <div class="dashboard-panel h-100">
             <div class="panel-header">
                 <h3 class="panel-title"><i class="fa-solid fa-chart-pie text-primary"></i> Risk Distribution</h3>
-                <span class="badge bg-light text-secondary border">ML Output</span>
+                <span class="badge bg-light text-secondary border font-monospace">ML Pipeline</span>
             </div>
-            <div class="panel-body d-flex flex-column align-items-center justify-content-center">
+            <div class="panel-body d-flex flex-column align-items-center justify-content-between">
                 <div style="height: 250px; width: 100%;">
                     <canvas id="riskDistChart"></canvas>
                 </div>
-                <div class="row w-100 text-center mt-3 g-1 small">
+                <div class="row w-100 text-center mt-3 g-1 small border-top pt-2">
                     <div class="col-3">
-                        <div class="fw-bold text-success">{{ kpis.low_risk_projects }}</div>
-                        <div class="text-muted" style="font-size: 0.72rem;">LOW</div>
+                        <div class="fw-bold text-success fs-6">{{ kpis.low_risk_projects }}</div>
+                        <div class="text-muted fw-semibold" style="font-size: 0.68rem;">LOW</div>
                     </div>
                     <div class="col-3">
-                        <div class="fw-bold text-warning">{{ kpis.medium_risk_projects }}</div>
-                        <div class="text-muted" style="font-size: 0.72rem;">MEDIUM</div>
+                        <div class="fw-bold text-warning-emphasis fs-6">{{ kpis.medium_risk_projects }}</div>
+                        <div class="text-muted fw-semibold" style="font-size: 0.68rem;">MEDIUM</div>
                     </div>
                     <div class="col-3">
-                        <div class="fw-bold text-orange">{{ kpis.high_risk_projects }}</div>
-                        <div class="text-muted" style="font-size: 0.72rem;">HIGH</div>
+                        <div class="fw-bold text-orange fs-6">{{ kpis.high_risk_projects }}</div>
+                        <div class="text-muted fw-semibold" style="font-size: 0.68rem;">HIGH</div>
                     </div>
                     <div class="col-3">
-                        <div class="fw-bold text-danger">{{ kpis.critical_projects }}</div>
-                        <div class="text-muted" style="font-size: 0.72rem;">CRITICAL</div>
+                        <div class="fw-bold text-danger fs-6">{{ kpis.critical_projects }}</div>
+                        <div class="text-muted fw-semibold" style="font-size: 0.68rem;">CRITICAL</div>
                     </div>
                 </div>
             </div>
@@ -471,7 +487,7 @@
         <div class="dashboard-panel h-100">
             <div class="panel-header">
                 <h3 class="panel-title"><i class="fa-solid fa-building-columns text-primary"></i> Ministry Risk & Allocation</h3>
-                <span class="badge bg-light text-secondary border">Comparative Outlay</span>
+                <span class="badge bg-light text-secondary border font-monospace">Comparative Outlay</span>
             </div>
             <div class="panel-body">
                 <div style="height: 280px; width: 100%;">
@@ -487,8 +503,8 @@
     <div class="col-lg-6">
         <div class="dashboard-panel h-100">
             <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-industry text-primary"></i> Sector Portfolio</h3>
-                <span class="badge bg-light text-secondary border">Total Count</span>
+                <h3 class="panel-title"><i class="fa-solid fa-industry text-primary"></i> Sector Portfolio Distribution</h3>
+                <span class="badge bg-light text-secondary border font-monospace">Total Count</span>
             </div>
             <div class="panel-body">
                 <div style="height: 260px; width: 100%;">
@@ -502,8 +518,8 @@
     <div class="col-lg-6">
         <div class="dashboard-panel h-100">
             <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-chart-line text-primary"></i> Expenditure vs Physical Progress</h3>
-                <span class="badge bg-light text-secondary border">Divergence Outliers</span>
+                <h3 class="panel-title"><i class="fa-solid fa-chart-line text-primary"></i> Spend vs Physical Progress</h3>
+                <span class="badge bg-light text-secondary border font-monospace">Divergence Outliers</span>
             </div>
             <div class="panel-body">
                 <div style="height: 260px; width: 100%;">
@@ -521,7 +537,7 @@
         <div class="dashboard-panel h-100">
             <div class="panel-header">
                 <h3 class="panel-title text-danger"><i class="fa-solid fa-clock text-danger"></i> Top Schedule Delay Risks</h3>
-                <a href="{{ url_for('projects.index', sort_by='delay_probability', sort_order='desc') }}" class="btn btn-outline-danger btn-sm">View All</a>
+                <a href="{{ url_for('projects.index', sort_by='delay_probability', sort_order='desc') }}" class="btn btn-outline-danger btn-sm px-3 fw-semibold">View All</a>
             </div>
             <div class="panel-body p-0">
                 <div class="table-responsive">
@@ -529,7 +545,7 @@
                         <thead>
                             <tr>
                                 <th>Project</th>
-                                <th>Delay Risk</th>
+                                <th>Delay Probability</th>
                                 <th>Delay Days</th>
                                 <th>Action</th>
                             </tr>
@@ -548,7 +564,7 @@
         <div class="dashboard-panel h-100">
             <div class="panel-header">
                 <h3 class="panel-title text-orange"><i class="fa-solid fa-coins text-orange"></i> Top Cost Overrun Risks</h3>
-                <a href="{{ url_for('projects.index', sort_by='cost_overrun_probability', sort_order='desc') }}" class="btn btn-outline-warning btn-sm">View All</a>
+                <a href="{{ url_for('projects.index', sort_by='cost_overrun_probability', sort_order='desc') }}" class="btn btn-outline-warning btn-sm px-3 fw-semibold">View All</a>
             </div>
             <div class="panel-body p-0">
                 <div class="table-responsive">

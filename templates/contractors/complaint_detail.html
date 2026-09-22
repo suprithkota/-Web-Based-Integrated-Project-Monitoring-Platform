@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Grievance {{ complaint.complaint_code }} — ProjectPulse AI{% endblock %}
+{% block header_title %}Grievance Tracking: {{ complaint.complaint_code }}{% endblock %}
+{% block breadcrumb %}Grievance Dossier &bull; Status: {{ complaint.status }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-light text-dark border font-monospace me-2">{{ complaint.complaint_code }}</span>
+                    <span class="badge {% if complaint.status == 'Resolved' %}bg-success{% elif complaint.status in ['Investigation', 'Site Inspection Required'] %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ complaint.status }}
+                    </span>
+                </div>
+                <small class="text-muted">Filed on {{ complaint.created_at.strftime('%d-%b-%Y %H:%M') if complaint.created_at else '' }}</small>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-dark mb-2">{{ complaint.category }}</h5>
+                <div class="text-muted small mb-3">
+                    <i class="fa-solid fa-location-dot text-danger me-1"></i> {{ complaint.location }}
+                    {% if complaint.gps_lat and complaint.gps_lng %}
+                    &bull; <span class="font-monospace">GPS: {{ complaint.gps_lat }}, {{ complaint.gps_lng }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="p-3 bg-light rounded mb-4">
+                    <div class="small fw-semibold text-muted mb-1">Citizen Statement:</div>
+                    <p class="mb-0 text-dark">{{ complaint.description }}</p>
+                </div>
+
+                {% if complaint.evidence_file_path %}
+                <div class="mb-4">
+                    <div class="small fw-semibold text-muted mb-2"><i class="fa-solid fa-image me-1"></i> Attached Evidence Photo:</div>
+                    <img src="{{ complaint.evidence_file_path }}" class="img-fluid rounded border shadow-sm" style="max-height: 320px;" alt="Grievance evidence photo">
+                </div>
+                {% endif %}
+
+                <!-- Official Resolution / Action Taken -->
+                <div class="border-top pt-3 mt-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-clipboard-check text-primary me-2"></i>Official Technical Response & Action</h6>
+                    {% if complaint.official_response %}
+                    <div class="alert alert-info border-0 mb-2">
+                        <div class="small fw-bold">Official Response:</div>
+                        <div class="small">{{ complaint.official_response }}</div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">Under formal verification by assigned field inspection team.</p>
+                    {% endif %}
+
+                    {% if complaint.inspection_finding_ref %}
+                    <div class="small text-muted mt-2">
+                        <strong>Field Inspection Reference:</strong> {{ complaint.inspection_finding_ref }}
+                    </div>
+                    {% endif %}
+                    {% if complaint.assigned_officer %}
+                    <div class="small text-muted mt-1">
+                        <strong>Assigned Officer:</strong> {{ complaint.assigned_officer }} &bull; Department: {{ complaint.routed_department or 'PWD Infrastructure Division' }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Officer Triage Sidebar (Only for Officer & Admin) -->
+    <div class="col-lg-4">
+        {% if current_user.role in ['admin', 'officer'] %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-user-shield text-primary me-2"></i>Officer Triage & Field Verification</h6>
+            </div>
+            <div class="card-body p-3">
+                <form method="POST" action="{{ url_for('engineering.triage_complaint', complaint_id=complaint.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Update Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="Under Review" {% if complaint.status == 'Under Review' %}selected{% endif %}>Under Review</option>
+                            <option value="Site Inspection Required" {% if complaint.status == 'Site Inspection Required' %}selected{% endif %}>Site Inspection Required</option>
+                            <option value="Investigation" {% if complaint.status == 'Investigation' %}selected{% endif %}>Investigation in Progress</option>
+                            <option value="Action Required" {% if complaint.status == 'Action Required' %}selected{% endif %}>Action Required (Notice to Contractor)</option>
+                            <option value="Resolved" {% if complaint.status == 'Resolved' %}selected{% endif %}>Resolved & Rectified</option>
+                            <option value="Rejected with Reason" {% if complaint.status == 'Rejected with Reason' %}selected{% endif %}>Rejected with Reason</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Routed Department</label>
+                        <input type="text" name="routed_department" class="form-control form-control-sm" value="{{ complaint.routed_department or 'Roads & Buildings Division' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Field Inspection Reference</label>
+                        <input type="text" name="inspection_finding_ref" class="form-control form-control-sm" value="{{ complaint.inspection_finding_ref or '' }}" placeholder="e.g. INSP-2026-0492">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Official Resolution / Finding Notes</label>
+                        <textarea name="official_response" class="form-control form-control-sm" rows="3" placeholder="Enter findings, contractor rectification order, or technical remarks...">{{ complaint.official_response or '' }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fa-solid fa-check me-1"></i> Update Complaint Triage
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Project & Contractor Metadata Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-link text-secondary me-2"></i>Linked Entities</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="mb-3">
+                    <span class="small text-muted d-block">Project:</span>
+                    {% if complaint.project %}
+                    <a href="{{ url_for('projects.detail', project_id=complaint.project_id) }}" class="fw-semibold text-decoration-none">
+                        {{ complaint.project.project_code }} - {{ complaint.project.project_name }}
+                    </a>
+                    {% else %}
+                    <span class="small text-muted">General Public Works</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <span class="small text-muted d-block">Executing Contractor:</span>
+                    {% if complaint.contractor %}
+                    <a href="{{ url_for('contractors.detail', contractor_id=complaint.contractor_id) }}" class="fw-semibold text-decoration-none">
+                        {{ complaint.contractor.name }}
+                    </a>
+                    {% else %}
+                    <span class="small text-muted">Direct Departmental Execution</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

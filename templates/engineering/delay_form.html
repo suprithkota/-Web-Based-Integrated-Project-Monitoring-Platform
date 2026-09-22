@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Log Project Delay Cause — ProjectPulse AI{% endblock %}
+{% block header_title %}Document Project Delay & Root Cause Analysis{% endblock %}
+{% block breadcrumb %}Official Delay Classification Across 8 Standard Categories{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-business-time text-danger me-2"></i>Official Project Delay Record</h5>
+                <small class="text-muted">Section 25 Compliance: Document empirical causes with official authority attribution and corrective action.</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('engineering.new_delay_record') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Infrastructure Project *</label>
+                        <select name="project_id" class="form-select" required>
+                            <option value="">Select Project...</option>
+                            {% for p in projects %}
+                            <option value="{{ p.id }}">{{ p.project_code }} - {{ p.project_name }} ({{ p.sector }} &bull; {{ p.location }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Standard Delay Category *</label>
+                            <select name="delay_category" class="form-select" required>
+                                <option value="Administrative">Administrative (Sanctions, Approvals, Tendering)</option>
+                                <option value="Financial">Financial (Fund Release, Budget Re-allocation)</option>
+                                <option value="Land / Legal">Land / Legal (Acquisition, Court Injunction, R&R)</option>
+                                <option value="Technical">Technical (Design Revisions, Utility Relocation)</option>
+                                <option value="Contractor / Execution">Contractor / Execution (Machinery, Mobilization, Labor)</option>
+                                <option value="Material">Material (Shortage, Supply Chain Disruption)</option>
+                                <option value="Environmental">Environmental (Clearances, National Green Tribunal, Weather)</option>
+                                <option value="Other">Other Unforeseen Exigencies</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Schedule Delay Impact (Days) *</label>
+                            <input type="number" name="affected_days" class="form-control" required min="1" placeholder="e.g. 120">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Documented Root Cause Description *</label>
+                        <textarea name="delay_description" class="form-control" rows="3" required placeholder="Describe the factual root cause as recorded in official committee minutes or inspection reports..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Responsible Stakeholder / Authority</label>
+                            <input type="text" name="responsible_authority" class="form-control" placeholder="e.g. State Revenue Dept / Executing Contractor / NHAI">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Official Source / Meeting Minutes Ref</label>
+                            <input type="text" name="official_source" class="form-control" value="State Steering Committee Meeting Minutes">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Corrective Action & Recovery Protocol</label>
+                        <textarea name="corrective_action" class="form-control" rows="2" placeholder="Agreed mitigation steps, revised milestone schedule, penalty notices, or acceleration orders..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between border-top pt-3">
+                        <a href="{{ url_for('engineering.dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Delay Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Engineering Operations Command — ProjectPulse AI{% endblock %}
+{% block header_title %}Field Engineering & Technical Operations Command{% endblock %}
+{% block breadcrumb %}Site Inspections, Measurements, Quality Labs & Engineering Certifications{% endblock %}
+
+{% block content %}
+<!-- Officer Role Designation Banner -->
+<div class="alert alert-primary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-hard-hat text-primary fs-3"></i>
+        <div>
+            <div class="fw-bold">Technical Operations Portal &bull; {{ current_user.full_name or current_user.username }}</div>
+            <small class="text-secondary">
+                Designation: <span class="badge bg-light text-dark border">{{ current_user.technical_designation or 'Field Monitoring Officer' }}</span> &bull; 
+                Role: <span class="badge bg-primary text-uppercase">{{ current_user.role }}</span> &bull; 
+                Jurisdiction: {{ current_user.jurisdiction or 'All Assigned Sectors' }}
+            </small>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('engineering.new_inspection') }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-clipboard-check me-1"></i> Log Site Inspection
+        </a>
+        <a href="{{ url_for('engineering.new_quality_test') }}" class="btn btn-success btn-sm">
+            <i class="fa-solid fa-vial me-1"></i> Record Quality Test
+        </a>
+        <a href="{{ url_for('data_sync.officer_data_entry') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Verified Entry
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Assigned Projects</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ total_projects }}</div>
+            <div class="small text-muted"><i class="fa-solid fa-folder text-primary me-1"></i> {{ active_sites }} Active Construction Sites</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Pending EE Reviews</div>
+            <div class="fs-4 fw-bold {% if pending_ee_reviews > 0 %}text-warning{% else %}text-success{% endif %} mt-1">
+                {{ pending_ee_reviews }}
+            </div>
+            <div class="small text-muted"><i class="fa-solid fa-stamp text-warning me-1"></i> Awaiting Technical Certification</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Quality Tests Logged</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ total_tests }}</div>
+            <div class="small text-muted">
+                <span class="text-success fw-semibold">{{ passed_tests }} Passed</span> &bull; 
+                <span class="text-danger fw-semibold">{{ failed_tests }} Failed</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Field Inquiries</div>
+            <div class="fs-4 fw-bold {% if field_complaints|length > 0 %}text-danger{% else %}text-success{% endif %} mt-1">
+                {{ field_complaints|length }}
+            </div>
+            <div class="small text-muted"><i class="fa-solid fa-map-pin text-danger me-1"></i> Grievances Needing Verification</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Site Inspections Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-ruler-combined text-primary me-2"></i>Recent Site Inspection Reports & Measurements</h5>
+        <a href="{{ url_for('engineering.new_inspection') }}" class="btn btn-sm btn-primary">
+            <i class="fa-solid fa-plus me-1"></i> New Site Inspection
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Project</th>
+                    <th>Stage Inspected</th>
+                    <th>Field Progress</th>
+                    <th>Measurements Recorded</th>
+                    <th>Inspecting Officer</th>
+                    <th>Inspection Date</th>
+                    <th>EE Verification</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in recent_inspections %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('engineering.inspection_detail', inspection_id=i.id) }}" class="fw-bold text-decoration-none text-dark">
+                            {{ i.project.project_code if i.project else 'Project' }}
+                        </a>
+                        <div class="small text-muted">{{ i.project.project_name if i.project else '' }}</div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border">{{ i.stage_inspected }}</span></td>
+                    <td>
+                        <span class="fw-bold">{{ i.work_completed_percentage }}%</span>
+                    </td>
+                    <td class="small" style="max-width: 260px;">
+                        {{ i.measurements_recorded }}
+                    </td>
+                    <td class="small">
+                        <div class="fw-semibold">{{ i.officer_name }}</div>
+                        <div class="text-muted">{{ i.officer_designation }}</div>
+                    </td>
+                    <td class="small text-muted">{{ i.inspection_date }}</td>
+                    <td>
+                        <span class="badge {% if 'Certified' in i.verification_status %}bg-success-subtle text-success border border-success-subtle{% elif 'Rejected' in i.verification_status %}bg-danger-subtle text-danger border border-danger-subtle{% else %}bg-warning-subtle text-warning border border-warning-subtle{% endif %}">
+                            {{ i.verification_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('engineering.inspection_detail', inspection_id=i.id) }}" class="btn btn-sm btn-outline-primary">
+                            Review <i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No site inspections logged yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Two-Column Operational Queue -->
+<div class="row g-4">
+    <!-- Field Grievances Needing Site Verification -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-bell text-danger me-2"></i>Citizen Grievances Requiring Field Verification</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for c in field_complaints %}
+                <div class="list-group-item p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge bg-light text-dark border font-monospace">{{ c.complaint_code }}</span>
+                            <span class="fw-semibold text-dark">{{ c.category }}</span>
+                            <div class="small text-muted mt-1"><i class="fa-solid fa-location-dot text-danger me-1"></i> {{ c.location }}</div>
+                            <div class="small text-muted mt-1">{{ c.description[:100] }}...</div>
+                        </div>
+                        <a href="{{ url_for('contractors.complaint_detail', complaint_id=c.id) }}" class="btn btn-sm btn-outline-warning">
+                            Triage & Action
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted small">No pending field verification requests.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Scoped Projects List -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-list-check text-primary me-2"></i>My Monitored Projects</h6>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for p in projects[:6] %}
+                <div class="list-group-item p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-semibold text-decoration-none text-dark">
+                                {{ p.project_code }} - {{ p.project_name }}
+                            </a>
+                            <div class="small text-muted">Progress: {{ p.physical_progress }}% &bull; Status: {{ p.project_status }}</div>
+                        </div>
+                        <a href="{{ url_for('engineering.new_inspection', project_id=p.id) }}" class="btn btn-sm btn-outline-primary" title="Record site inspection">
+                            <i class="fa-solid fa-plus me-1"></i> Inspect
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

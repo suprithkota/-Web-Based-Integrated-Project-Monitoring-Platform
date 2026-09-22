@@ -45,6 +45,10 @@ def create_app(config_class=Config):
     from routes.assistant import assistant_bp
     from routes.map_view import map_bp
     from routes.data_import import data_import_bp
+    from routes.ml_analytics import ml_analytics_bp
+    from routes.contractors import contractors_bp
+    from routes.engineering import engineering_bp
+    from routes.data_sync import data_sync_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -55,6 +59,18 @@ def create_app(config_class=Config):
     app.register_blueprint(assistant_bp)
     app.register_blueprint(map_bp)
     app.register_blueprint(data_import_bp)
+    app.register_blueprint(ml_analytics_bp)
+    app.register_blueprint(contractors_bp)
+    app.register_blueprint(engineering_bp)
+    app.register_blueprint(data_sync_bp)
+
+    # Start background synchronization daemon (disabled in testing mode)
+    if not app.config.get('TESTING'):
+        try:
+            from services.sync_service import SyncService
+            SyncService.start_background_scheduler(app)
+        except Exception:
+            pass
 
     # Request Lifecycle Hooks for Security
     @app.before_request
@@ -87,17 +103,35 @@ def create_app(config_class=Config):
     @app.context_processor
     def inject_global_vars():
         alert_count = 0
+        conflict_count = 0
         try:
             alert_count = Alert.query.filter(Alert.status.in_(['Open', 'Under Review'])).count()
         except Exception:
             alert_count = 0
+
+        try:
+            from database.models import DataConflictRecord
+            conflict_count = DataConflictRecord.query.filter_by(status='Unresolved').count()
+        except Exception:
+            conflict_count = 0
             
         return {
             'DEMO_MODE': app.config.get('DEMO_MODE', True),
             'DISCLAIMER': app.config.get('DISCLAIMER', ''),
             'DATASET_LABEL': app.config.get('DATASET_LABEL', ''),
-            'OPEN_ALERTS_COUNT': alert_count
+            'OPEN_ALERTS_COUNT': alert_count,
+            'UNRESOLVED_CONFLICTS_COUNT': conflict_count
         }
+
+    @app.route('/data/inspection_photos/<filename>')
+    def serve_inspection_photo(filename):
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(app.root_path, 'data', 'inspection_photos'), filename)
+
+    @app.route('/data/documents/<filename>')
+    def serve_document(filename):
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(app.root_path, 'data', 'documents'), filename)
 
     @app.template_filter('inr')
     def format_inr(val):
@@ -162,10 +196,6 @@ def create_app(config_class=Config):
 app = create_app()
 
 if __name__ == '__main__':
-    with app.app_context():
-        from database.migration import ensure_database_schema
-        ensure_database_schema()
-        db.create_all()
-        from routes.auth import ensure_demo_users
-        ensure_demo_users()
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    from run import main
+    main()
+

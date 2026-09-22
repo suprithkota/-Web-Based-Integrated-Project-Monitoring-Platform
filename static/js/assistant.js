@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const chatForm = document.getElementById('chatForm');
     const chatInput = document.getElementById('chatInput');
+    const micBtn = document.getElementById('micBtn');
+    const micIcon = document.getElementById('micIcon');
+    const voiceReadoutToggle = document.getElementById('voiceReadoutToggle');
 
     if (chatForm && chatInput) {
         chatForm.addEventListener('submit', function(e) {
@@ -10,6 +13,68 @@ document.addEventListener('DOMContentLoaded', function() {
             sendChatMessage(text);
             chatInput.value = '';
         });
+    }
+
+    // Web Speech API Voice Recognition
+    if (micBtn && micIcon) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-IN'; // Indian English default, also understands standard terms
+
+            let isRecording = false;
+
+            micBtn.addEventListener('click', function() {
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    try {
+                        recognition.start();
+                    } catch (err) {
+                        console.error('Speech recognition start error:', err);
+                    }
+                }
+            });
+
+            recognition.onstart = function() {
+                isRecording = true;
+                micBtn.classList.remove('btn-outline-secondary');
+                micBtn.classList.add('btn-danger');
+                micIcon.className = 'fa-solid fa-microphone text-white fa-beat';
+                chatInput.placeholder = 'Listening... Please speak your infrastructure query now.';
+            };
+
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                if (speechResult) {
+                    chatInput.value = speechResult;
+                    sendChatMessage(speechResult);
+                    chatInput.value = '';
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.warn('Speech recognition error:', event.error);
+                resetMic();
+            };
+
+            recognition.onend = function() {
+                resetMic();
+            };
+
+            function resetMic() {
+                isRecording = false;
+                micBtn.classList.remove('btn-danger');
+                micBtn.classList.add('btn-outline-secondary');
+                micIcon.className = 'fa-solid fa-microphone';
+                chatInput.placeholder = 'Ask about contractors, delays, material tests, or speak using the microphone...';
+            }
+        } else {
+            micBtn.title = 'Speech recognition not supported on this browser';
+            micBtn.classList.add('disabled');
+        }
     }
 });
 
@@ -31,7 +96,7 @@ function sendChatMessage(messageText) {
     // 2. Append Typing Indicator
     const typingBubble = document.createElement('div');
     typingBubble.className = 'chat-bubble assistant-bubble typing-indicator';
-    typingBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> Consulting project database & risk engine...';
+    typingBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> Consulting official database, contractor records & BIS test results...';
     chatMessages.appendChild(typingBubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -47,18 +112,28 @@ function sendChatMessage(messageText) {
         const assistantBubble = document.createElement('div');
         assistantBubble.className = 'chat-bubble assistant-bubble shadow-sm';
         
-        // Simple markdown formatter
-        let formatted = formatMarkdown(data.response || 'No response available.');
+        let rawResponse = data.response || 'No response available.';
+        let formatted = formatMarkdown(rawResponse);
+
         assistantBubble.innerHTML = `
             <div class="d-flex align-items-center gap-2 mb-2 pb-1 border-bottom">
                 <i class="fa-solid fa-robot text-primary"></i>
                 <strong class="text-primary small">ProjectPulse AI</strong>
-                <span class="badge bg-success bg-opacity-10 text-success ms-auto" style="font-size: 0.65rem;">Grounded DB Response</span>
+                <span class="badge bg-success bg-opacity-10 text-success ms-auto" style="font-size: 0.65rem;">Grounded Official Data</span>
+                <button type="button" class="btn btn-sm btn-link p-0 text-muted ms-2" onclick="speakResponse(this)" title="Read aloud">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
             </div>
-            <div>${formatted}</div>
+            <div class="response-text-content">${formatted}</div>
         `;
         chatMessages.appendChild(assistantBubble);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Auto-readout if Voice Readout Toggle is on
+        const readoutToggle = document.getElementById('voiceReadoutToggle');
+        if (readoutToggle && readoutToggle.checked) {
+            speakText(rawResponse);
+        }
     })
     .catch(err => {
         typingBubble.remove();
@@ -69,6 +144,47 @@ function sendChatMessage(messageText) {
     });
 }
 
+function speakResponse(btn) {
+    const parent = btn.closest('.chat-bubble');
+    if (!parent) return;
+    const textEl = parent.querySelector('.response-text-content');
+    if (textEl) {
+        speakText(textEl.innerText);
+    }
+}
+
+function speakText(rawText) {
+    if (!('speechSynthesis' in window)) return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Clean text of markdown tokens for natural speech
+    let clean = (rawText || '')
+        .replace(/#+/g, '')
+        .replace(/\*+/g, '')
+        .replace(/`+/g, '')
+        .replace(/-+/g, '')
+        .replace(/\[.*?\]\(.*?\)/g, '')
+        .replace(/₹/g, 'Rupees ')
+        .replace(/Cr/g, 'Crores')
+        .replace(/km/g, 'kilometers')
+        .trim();
+
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    // Pick English (Indian) or standard English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('en-GB') || v.lang.includes('en-US'));
+    if (preferredVoice) {
+        utterance.voice = preferredVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.innerText = text;
@@ -76,9 +192,7 @@ function escapeHtml(text) {
 }
 
 function formatMarkdown(text) {
-    // 1. Sanitize/escape raw HTML first to prevent any script execution (Requirement 20)
     let safe = escapeHtml(text || '');
-    // 2. Safe Markdown transformations
     let html = safe
         .replace(/^### (.*$)/gim, '<h6 class="fw-bold text-dark mt-2 mb-1">$1</h6>')
         .replace(/^#### (.*$)/gim, '<div class="fw-bold text-dark small mt-2 mb-1">$1</div>')

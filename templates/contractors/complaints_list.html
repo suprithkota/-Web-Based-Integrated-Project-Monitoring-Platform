@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Citizen Grievance & Complaint Portal — ProjectPulse AI{% endblock %}
+{% block header_title %}Public Infrastructure Grievance & Complaint Portal{% endblock %}
+{% block breadcrumb %}Transparent Citizen Reporting & Official Investigation Triage{% endblock %}
+
+{% block content %}
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-bullhorn text-warning fs-3"></i>
+        <div>
+            <div class="fw-bold">Public Transparency & Citizen Oversight</div>
+            <small class="text-muted">
+                Rule 29: Unverified citizen complaints remain classified as allegations until official field engineer inspection is completed and verified.
+            </small>
+        </div>
+    </div>
+    <a href="{{ url_for('contractors.new_complaint') }}" class="btn btn-warning btn-sm fw-bold">
+        <i class="fa-solid fa-plus me-1"></i> File New Grievance
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-comments text-warning me-2"></i>Citizen Grievance Filings ({{ complaints|length }})</h5>
+        <small class="text-muted">Track complaint status and official engineering triage</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Grievance Code</th>
+                    <th>Project / Contractor</th>
+                    <th>Location</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Date Filed</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('contractors.complaint_detail', complaint_id=c.id) }}" class="fw-bold font-monospace text-decoration-none">
+                            {{ c.complaint_code }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ c.project.project_code if c.project else 'Public Infrastructure' }}</div>
+                        <small class="text-muted">{{ c.contractor.name if c.contractor else 'General Public Works' }}</small>
+                    </td>
+                    <td class="small"><i class="fa-solid fa-location-dot text-danger me-1"></i> {{ c.location }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ c.category }}</span></td>
+                    <td class="small" style="max-width: 280px;">{{ c.description }}</td>
+                    <td>
+                        <span class="badge {% if c.status == 'Resolved' %}bg-success{% elif c.status in ['Investigation', 'Site Inspection Required'] %}bg-danger{% elif c.status == 'Under Review' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                            {{ c.status }}
+                        </span>
+                    </td>
+                    <td class="small text-muted">{{ c.created_at.strftime('%d-%b-%Y') if c.created_at else '' }}</td>
+                    <td>
+                        <a href="{{ url_for('contractors.complaint_detail', complaint_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                            Track <i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No citizen grievances on record.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

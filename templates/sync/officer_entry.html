@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Officer Verified Manual Entry — ProjectPulse AI{% endblock %}
+{% block header_title %}Officer Verified Manual Project Update{% endblock %}
+{% block breadcrumb %}Audited Manual Intervention with Government Order Reference{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-file-pen text-primary me-2"></i>Officer Verified Data Entry</h5>
+                <small class="text-muted">Section 25 / Governance: Direct manual modifications require an Official Government Order Reference and are permanently recorded in the immutable version history.</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('data_sync.officer_data_entry') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Target Infrastructure Project *</label>
+                        <select name="project_id" class="form-select" required>
+                            <option value="">Select Project...</option>
+                            {% for p in projects %}
+                            <option value="{{ p.id }}">{{ p.project_code }} - {{ p.project_name }} ({{ p.location }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Field to Update *</label>
+                            <select name="field_to_update" class="form-select" required>
+                                <option value="physical_progress">Physical Progress (%)</option>
+                                <option value="expenditure">Actual Expenditure (₹ Cr)</option>
+                                <option value="approved_cost">Revised Approved Cost (₹ Cr)</option>
+                                <option value="delay_days">Delay Days</option>
+                                <option value="project_status">Project Status</option>
+                                <option value="current_construction_stage">Current Construction Stage</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">New Verified Value *</label>
+                            <input type="text" name="new_value" class="form-control" required placeholder="e.g. 78.4 or 4250.00">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Official Government Order / File Reference Number *</label>
+                        <input type="text" name="official_order_reference" class="form-control font-monospace" required placeholder="e.g. GO-MS-PWD-2026/894-A or CE/CZ/TECH/402">
+                        <div class="form-text small">Mandatory statutory reference number for CAG / Vigilance audit trail.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Technical Justification & Verification Notes *</label>
+                        <textarea name="reason_for_update" class="form-control" rows="3" required placeholder="State technical reason, date of joint site measurement, or committee sanction..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between border-top pt-3">
+                        <a href="{{ url_for('data_sync.data_sources') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fa-solid fa-stamp me-1"></i> Apply Audited Update
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

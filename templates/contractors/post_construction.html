@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Post-Construction & Defect Monitoring — ProjectPulse AI{% endblock %}
+{% block header_title %}Post-Construction & Defect Liability (DLP) Monitoring{% endblock %}
+{% block breadcrumb %}Warranty Audits, Structural Condition, and Long-Term Quality Records{% endblock %}
+
+{% block content %}
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center gap-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <i class="fa-solid fa-road-bridge text-primary fs-3"></i>
+    <div class="small">
+        <strong>Defect Liability Period (DLP) Monitoring:</strong>
+        Tracks structural integrity, road pavement quality, bridge bearing condition, and drainage systems during the mandatory statutory defect liability period (typically 3 to 5 years post-completion).
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clipboard-check text-primary me-2"></i>Post-Construction Audit Records ({{ records|length }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Project</th>
+                    <th>Inspection Date</th>
+                    <th>DLP Expiry</th>
+                    <th>Quality Status</th>
+                    <th>Structural Condition</th>
+                    <th>Cracks / Leakage</th>
+                    <th>Drainage Status</th>
+                    <th>Verified Findings</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('projects.detail', project_id=r.project_id) }}" class="fw-bold text-decoration-none text-dark">
+                            {{ r.project.project_code if r.project else 'Project' }}
+                        </a>
+                        <div class="small text-muted">{{ r.project.project_name if r.project else '' }}</div>
+                    </td>
+                    <td class="small">{{ r.inspection_date }}</td>
+                    <td class="small fw-semibold">{{ r.warranty_dlp_expiry or 'Active DLP' }}</td>
+                    <td>
+                        <span class="badge {% if 'No significant' in r.quality_status %}bg-success{% elif 'Minor' in r.quality_status %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ r.quality_status }}
+                        </span>
+                    </td>
+                    <td class="small fw-semibold">{{ r.structural_condition or 'Good' }}</td>
+                    <td class="small text-muted">
+                        <div>Cracks: {{ r.cracks_observed }}</div>
+                        <div>Leakage: {{ r.water_leakage_status }}</div>
+                    </td>
+                    <td class="small"><span class="badge bg-light text-dark border">{{ r.drainage_status or 'Operational' }}</span></td>
+                    <td class="small text-muted" style="max-width: 280px;">
+                        {{ r.verified_findings or 'Regular inspection findings logged by monitoring team.' }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No post-construction records currently available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

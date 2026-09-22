@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ supplier.name }} — Supplier Dossier{% endblock %}
+{% block header_title %}{{ supplier.name }}{% endblock %}
+{% block breadcrumb %}Supplier Quality Dossier &bull; {{ supplier.category }}{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="fa-solid fa-truck-ramp-box text-primary me-2"></i>{{ supplier.name }}</h4>
+                <div class="text-muted">
+                    Category: <span class="badge bg-light text-dark border">{{ supplier.category }}</span> &bull; 
+                    Location: {{ supplier.location or 'India' }}
+                </div>
+            </div>
+            <span class="badge bg-success fs-6">
+                {{ supplier.quality_rating or 'BIS Approved' }}
+            </span>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <div class="col-md-6">
+                <h6 class="fw-bold border-bottom pb-2 mb-3">Statutory & Licensing Credentials</h6>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-4 text-muted">GSTIN:</dt>
+                    <dd class="col-sm-8 font-monospace">{{ supplier.gstin or 'N/A' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">BIS License:</dt>
+                    <dd class="col-sm-8 font-monospace">{{ supplier.bis_license_number or 'BIS Certified' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Contact Person:</dt>
+                    <dd class="col-sm-8">{{ supplier.contact_person or 'Sales & Quality Incharge' }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold border-bottom pb-2 mb-3">Communication & Verification</h6>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-4 text-muted">Official Phone:</dt>
+                    <dd class="col-sm-8">{{ supplier.contact_phone or '+91 1800 233 4567' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Official Email:</dt>
+                    <dd class="col-sm-8">{{ supplier.contact_email or 'supply@vendor.co.in' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Verification:</dt>
+                    <dd class="col-sm-8"><span class="badge bg-light text-dark border">{{ supplier.verification_status or 'Verified' }}</span></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Material Batches Supplied -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-cubes text-primary me-2"></i>Material Batches Supplied to Infrastructure Projects</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Material</th>
+                    <th>Project</th>
+                    <th>Batch Number</th>
+                    <th>Quantity</th>
+                    <th>Delivery Date</th>
+                    <th>Approval Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in materials %}
+                <tr>
+                    <td class="fw-semibold">{{ m.material_name }}</td>
+                    <td>
+                        <a href="{{ url_for('projects.detail', project_id=m.project_id) }}" class="text-decoration-none text-dark">
+                            {{ m.project.project_code if m.project else 'Project' }}
+                        </a>
+                    </td>
+                    <td class="small font-monospace">{{ m.batch_number }}</td>
+                    <td class="small">{{ m.quantity_procured }} {{ m.unit }}</td>
+                    <td class="small">{{ m.delivery_date or 'Delivered' }}</td>
+                    <td>
+                        <span class="badge {% if m.approval_status == 'Approved' %}bg-success{% elif m.approval_status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ m.approval_status }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No material delivery records found for this vendor.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

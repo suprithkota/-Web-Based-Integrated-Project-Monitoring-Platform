@@ -9,10 +9,33 @@
     <div class="col-lg-10">
         <!-- Suggested Prompts Chips Bar -->
         <div class="mb-3">
-            <div class="small text-muted fw-bold text-uppercase mb-2">
-                <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Frequently Asked Intelligence Inquiries:
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="small text-muted fw-bold text-uppercase">
+                    <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Frequently Asked Intelligence Inquiries:
+                </div>
+                <div class="form-check form-switch small">
+                    <input class="form-check-input" type="checkbox" id="voiceReadoutToggle" checked>
+                    <label class="form-check-label text-muted" for="voiceReadoutToggle">
+                        <i class="fa-solid fa-volume-high me-1"></i> Voice Readout (TTS)
+                    </label>
+                </div>
             </div>
             <div class="d-flex flex-wrap gap-1">
+                <button type="button" class="prompt-chip" onclick="submitPrompt('How is Larsen & Toubro performing across its highway and civil projects?')">
+                    <i class="fa-solid fa-building text-primary me-1"></i> L&T Performance Dossier
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('What are the documented delay root causes for PRJ-0001?')">
+                    <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> PRJ-0001 Delay Root Causes
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Show material quality lab tests that failed BIS specifications.')">
+                    <i class="fa-solid fa-vial-circle-check text-success me-1"></i> Failed BIS Lab Tests
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Which contractors have delivered 100% of their projects on schedule?')">
+                    <i class="fa-solid fa-award text-warning me-1"></i> Top On-Schedule Contractors
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('What official government sources are feeding real-time data into the platform?')">
+                    <i class="fa-solid fa-network-wired text-info me-1"></i> Official Data Feeds
+                </button>
                 {% for prompt in sample_prompts %}
                 <button type="button" class="prompt-chip" onclick="submitPrompt('{{ prompt }}')">
                     <i class="fa-regular fa-comment-dots text-primary me-1"></i> {{ prompt }}
@@ -30,22 +53,25 @@
                         <div class="badge bg-primary text-white rounded-circle p-2">
                             <i class="fa-solid fa-robot"></i>
                         </div>
-                        <strong class="text-primary">ProjectPulse Intelligence Assistant</strong>
+                        <strong class="text-primary">ProjectPulse AI & Voice Assistant</strong>
                         <span class="badge bg-light text-secondary border small ms-auto">Grounding: Live SQLite DB</span>
                     </div>
                     <div>
-                        Namaste! I am your AI Project Intelligence Assistant. I am grounded directly in the monitored infrastructure database to provide analytical insights, root causes, and delay/cost risk assessments without hallucinations.
+                        Namaste! I am your AI Project & Contractor Intelligence Voice Assistant. I am grounded directly in verified government project records, contractor registries, BIS lab tests (IS 1786 / 516 / 269), and documented delay causes.
                         <div class="mt-2 text-muted small">
-                            Click any suggested prompt above, or type questions like <em>"Why is PRJ-0003 high risk?"</em> or <em>"Which ministry has the most critical projects?"</em>
+                            You can type your query below, or tap the <i class="fa-solid fa-microphone text-danger"></i> <strong>Microphone</strong> button to speak naturally.
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Input Bar -->
+            <!-- Input Bar with Voice Recognition -->
             <form id="chatForm" class="chat-input-bar">
                 <div class="input-group">
-                    <input type="text" id="chatInput" class="form-control" placeholder="Ask about project risks, ministries, delays, or cost escalation..." autocomplete="off" required>
+                    <button type="button" id="micBtn" class="btn btn-outline-secondary px-3" title="Click to speak (Voice Assistant)">
+                        <i class="fa-solid fa-microphone" id="micIcon"></i>
+                    </button>
+                    <input type="text" id="chatInput" class="form-control" placeholder="Ask about contractors, delays, material tests, or speak using the microphone..." autocomplete="off" required>
                     <button type="submit" id="sendBtn" class="btn btn-primary px-4">
                         <i class="fa-solid fa-paper-plane me-1"></i> Ask
                     </button>

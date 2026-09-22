@@ -48,5 +48,42 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (e) {}
         });
     }
+
+    // Responsive Mobile Sidebar Toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.querySelector('.app-sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+
+    if (sidebarToggle && sidebar && backdrop) {
+        function openSidebar() {
+            sidebar.classList.add('sidebar-open');
+            backdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('sidebar-open');
+            backdrop.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        sidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (sidebar.classList.contains('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992 && sidebar.classList.contains('sidebar-open')) {
+                closeSidebar();
+            }
+        });
+    }
 });
+
 

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Material Suppliers Directory — ProjectPulse AI{% endblock %}
+{% block header_title %}Material Suppliers & Certified Manufacturers{% endblock %}
+{% block breadcrumb %}Quality Assurance & Supply Chain Intelligence{% endblock %}
+
+{% block content %}
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center gap-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <i class="fa-solid fa-industry text-primary fs-4"></i>
+    <div class="small">
+        <strong>Supply Chain Quality Verification:</strong> Tracks cement, steel, bitumen, aggregate, and equipment vendors supplying government infrastructure projects, along with their BIS certifications and laboratory test ratings.
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-truck-ramp-box text-primary me-2"></i>Approved Material Suppliers ({{ suppliers|length }})</h5>
+        <a href="{{ url_for('contractors.materials_explorer') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fa-solid fa-cubes-stacked me-1"></i> Materials Explorer
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Supplier / Brand</th>
+                    <th>Category</th>
+                    <th>GSTIN</th>
+                    <th>Headquarters</th>
+                    <th>BIS Certification</th>
+                    <th>Quality Rating</th>
+                    <th>Materials Supplied</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in suppliers %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('contractors.supplier_detail', supplier_id=s.id) }}" class="fw-bold text-decoration-none text-dark d-block">
+                            {{ s.name }}
+                        </a>
+                        <small class="text-muted">{{ s.contact_person or 'Authorized Representative' }}</small>
+                    </td>
+                    <td><span class="badge bg-light text-dark border">{{ s.category }}</span></td>
+                    <td class="font-monospace small">{{ s.gstin or 'N/A' }}</td>
+                    <td class="small">{{ s.location or 'India' }}</td>
+                    <td class="small font-monospace">{{ s.bis_license_number or 'BIS Certified' }}</td>
+                    <td>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            {{ s.quality_rating or 'Satisfactory' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ s.materials_supplied|length }}</span> Batches
+                    </td>
+                    <td>
+                        <a href="{{ url_for('contractors.supplier_detail', supplier_id=s.id) }}" class="btn btn-sm btn-outline-primary">
+                            Details <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No material supplier records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

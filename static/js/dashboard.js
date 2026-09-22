@@ -1,4 +1,19 @@
+// ProjectPulse AI — Command Center Chart.js & Analytics Engine
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Configure global Chart.js defaults
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.plugins.tooltip.backgroundColor = '#0f172a';
+        Chart.defaults.plugins.tooltip.titleColor = '#ffffff';
+        Chart.defaults.plugins.tooltip.bodyColor = '#f8fafc';
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 6;
+        Chart.defaults.plugins.tooltip.boxPadding = 4;
+    }
+
     fetch('/api/dashboard' + window.location.search)
         .then(response => response.json())
         .then(data => {
@@ -25,18 +40,28 @@ function renderCharts(charts) {
                         charts.risk_distribution.HIGH,
                         charts.risk_distribution.CRITICAL
                     ],
-                    backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+                    backgroundColor: ['#16a34a', '#d97706', '#ea580c', '#dc2626'],
                     borderWidth: 2,
-                    borderColor: '#ffffff'
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            padding: 14,
+                            usePointStyle: true,
+                            font: { size: 11, weight: 600 }
+                        }
+                    }
                 },
-                cutout: '68%'
+                cutout: '72%'
             }
         });
     }
@@ -51,13 +76,15 @@ function renderCharts(charts) {
                 datasets: [{
                     label: 'Active Projects',
                     data: charts.ministries.counts,
-                    backgroundColor: '#1d3557',
-                    borderRadius: 4
+                    backgroundColor: '#2563eb',
+                    borderRadius: 4,
+                    barThickness: 16
                 }, {
                     label: 'Avg Risk Index',
                     data: charts.ministries.avg_risks,
-                    backgroundColor: '#f97316',
-                    borderRadius: 4
+                    backgroundColor: '#ea580c',
+                    borderRadius: 4,
+                    barThickness: 16
                 }]
             },
             options: {
@@ -65,17 +92,28 @@ function renderCharts(charts) {
                 maintainAspectRatio: false,
                 indexAxis: 'y',
                 scales: {
-                    x: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                    y: { grid: { display: false } }
+                    x: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: 500 }, color: '#0f172a' }
+                    }
                 },
                 plugins: {
-                    legend: { position: 'top' }
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, padding: 12 }
+                    }
                 }
             }
         });
     }
 
-    // 3. Sector Distribution (Bar)
+    // 3. Sector Distribution (Vertical Bar)
     const ctxSec = document.getElementById('sectorChart');
     if (ctxSec && charts.sectors) {
         new Chart(ctxSec, {
@@ -85,16 +123,24 @@ function renderCharts(charts) {
                 datasets: [{
                     label: 'Projects Count',
                     data: charts.sectors.counts,
-                    backgroundColor: '#3b82f6',
-                    borderRadius: 4
+                    backgroundColor: '#0284c7',
+                    borderRadius: 4,
+                    maxBarThickness: 36
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                    x: { grid: { display: false } }
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { size: 11 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
                 },
                 plugins: { legend: { display: false } }
             }
@@ -113,12 +159,14 @@ function renderCharts(charts) {
                     backgroundColor: function(context) {
                         const idx = context.dataIndex;
                         const p = charts.scatter_points[idx];
-                        if (!p) return '#3b82f6';
-                        if (p.risk_level === 'CRITICAL') return '#ef4444';
-                        if (p.risk_level === 'HIGH') return '#f97316';
-                        if (p.risk_level === 'MEDIUM') return '#f59e0b';
-                        return '#10b981';
+                        if (!p) return '#2563eb';
+                        if (p.risk_level === 'CRITICAL') return '#dc2626';
+                        if (p.risk_level === 'HIGH') return '#ea580c';
+                        if (p.risk_level === 'MEDIUM') return '#d97706';
+                        return '#16a34a';
                     },
+                    borderColor: '#ffffff',
+                    borderWidth: 1,
                     pointRadius: 6,
                     pointHoverRadius: 8
                 }]
@@ -128,16 +176,18 @@ function renderCharts(charts) {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        title: { display: true, text: 'Actual Physical Progress (%)' },
+                        title: { display: true, text: 'Actual Physical Progress (%)', font: { weight: 600 } },
                         min: 0,
                         max: 100,
-                        grid: { color: '#f1f5f9' }
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { size: 11 } }
                     },
                     y: {
-                        title: { display: true, text: 'Expenditure Utilization (%)' },
+                        title: { display: true, text: 'Expenditure Utilization (%)', font: { weight: 600 } },
                         min: 0,
                         max: 120,
-                        grid: { color: '#f1f5f9' }
+                        grid: { color: '#f1f5f9' },
+                        ticks: { font: { size: 11 } }
                     }
                 },
                 plugins: {
@@ -161,18 +211,18 @@ function populateWatchlists(charts) {
         delayTbody.innerHTML = charts.top_delay_risk.slice(0, 5).map(p => `
             <tr>
                 <td>
-                    <div class="fw-semibold text-dark text-truncate" style="max-width: 200px;">${p.name}</div>
+                    <div class="fw-semibold text-dark text-truncate" style="max-width: 220px;">${p.name}</div>
                     <div class="small text-muted font-monospace">${p.code}</div>
                 </td>
                 <td>
-                    <span class="badge bg-danger bg-opacity-10 text-danger fw-bold fs-7">
+                    <span class="badge-risk badge-risk-critical font-monospace">
                         ${p.delay_prob}%
                     </span>
                 </td>
-                <td class="text-muted small">${p.delay_days} days</td>
+                <td class="text-secondary small font-monospace">${p.delay_days} days</td>
                 <td>
-                    <a href="/projects/${p.id}" class="btn btn-sm btn-outline-primary py-0 px-2">
-                        Inspect
+                    <a href="/projects/${p.id}" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.76rem;">
+                        Inspect <i class="fa-solid fa-arrow-right ms-1"></i>
                     </a>
                 </td>
             </tr>
@@ -184,21 +234,22 @@ function populateWatchlists(charts) {
         costTbody.innerHTML = charts.top_cost_risk.slice(0, 5).map(p => `
             <tr>
                 <td>
-                    <div class="fw-semibold text-dark text-truncate" style="max-width: 200px;">${p.name}</div>
+                    <div class="fw-semibold text-dark text-truncate" style="max-width: 220px;">${p.name}</div>
                     <div class="small text-muted font-monospace">${p.code}</div>
                 </td>
                 <td>
-                    <span class="badge bg-warning bg-opacity-25 text-dark fw-bold fs-7">
+                    <span class="badge-risk badge-risk-high font-monospace">
                         ${p.cost_prob}%
                     </span>
                 </td>
-                <td class="text-danger small fw-semibold">+${p.cost_escalation}%</td>
+                <td class="text-danger small font-monospace fw-semibold">+${p.cost_escalation}%</td>
                 <td>
-                    <a href="/projects/${p.id}" class="btn btn-sm btn-outline-primary py-0 px-2">
-                        Inspect
+                    <a href="/projects/${p.id}" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.76rem;">
+                        Inspect <i class="fa-solid fa-arrow-right ms-1"></i>
                     </a>
                 </td>
             </tr>
         `).join('');
     }
 }
+

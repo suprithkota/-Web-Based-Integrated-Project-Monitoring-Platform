@@ -118,7 +118,11 @@ def api_simulate():
             'cost_prob': current_eval['cost_overrun_probability'],
             'health_score': current_eval['health_score'],
             'risk_level': current_eval['risk_level'],
-            'explanation': current_eval['explanation']
+            'explanation': current_eval['explanation'],
+            'model_predictions': current_eval.get('model_predictions', {}),
+            'anomaly': current_eval.get('anomaly', {}),
+            'cluster': current_eval.get('cluster', {}),
+            'shap_explanation': current_eval.get('shap_explanation', {})
         },
         'simulated': {
             'risk_score': simulated_eval['overall_risk_score'],
@@ -127,7 +131,11 @@ def api_simulate():
             'health_score': simulated_eval['health_score'],
             'risk_level': simulated_eval['risk_level'],
             'explanation': simulated_eval['explanation'],
-            'factors': simulated_eval['contributing_factors'] if current_user.role != 'viewer' else {}
+            'factors': simulated_eval['contributing_factors'] if current_user.role != 'viewer' else {},
+            'model_predictions': simulated_eval.get('model_predictions', {}),
+            'anomaly': simulated_eval.get('anomaly', {}),
+            'cluster': simulated_eval.get('cluster', {}),
+            'shap_explanation': simulated_eval.get('shap_explanation', {})
         },
         'deltas': {
             'risk_delta': risk_delta,

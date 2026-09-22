@@ -111,6 +111,7 @@ from services.rbac_service import (
 # 1. LOGIN ROUTE
 # =========================================================================
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@auth_bp.route('/auth/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
@@ -875,6 +876,7 @@ def admin_audit_logs():
 # 10. LOGOUT & UTILITY
 # =========================================================================
 @auth_bp.route('/logout')
+@auth_bp.route('/auth/logout')
 @login_required
 def logout():
     username = current_user.username if current_user.is_authenticated else 'unknown'

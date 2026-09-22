@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Data Synchronization Audit Logs — ProjectPulse AI{% endblock %}
+{% block header_title %}Data Synchronization Audit & Telemetry Logs{% endblock %}
+{% block breadcrumb %}Immutable History of Government Portal Pulls & Webhooks{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('data_sync.sync_logs') }}" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-server me-1"></i> Data Source</label>
+                <select name="source_id" class="form-select form-select-sm">
+                    <option value="">All Official Sources</option>
+                    {% for s in sources %}
+                    <option value="{{ s.id }}" {% if selected_source_id == s.id %}selected{% endif %}>{{ s.source_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-shield me-1"></i> Sync Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="SUCCESS" {% if selected_status == 'SUCCESS' %}selected{% endif %}>SUCCESS</option>
+                    <option value="PARTIAL" {% if selected_status == 'PARTIAL' %}selected{% endif %}>PARTIAL</option>
+                    <option value="FAILED" {% if selected_status == 'FAILED' %}selected{% endif %}>FAILED</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1" style="height: 33px;">Filter Logs</button>
+                <a href="{{ url_for('data_sync.sync_logs') }}" class="btn btn-outline-secondary btn-sm" style="height: 33px;">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Synchronization Audit Trail</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Sync ID</th>
+                    <th>Source Portal</th>
+                    <th>Trigger Mode</th>
+                    <th>Timestamp</th>
+                    <th>Latency</th>
+                    <th>Ingested</th>
+                    <th>Updated</th>
+                    <th>Status</th>
+                    <th>Error Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                <tr>
+                    <td class="font-monospace small fw-bold">{{ log.sync_id }}</td>
+                    <td class="small fw-semibold">{{ log.source_name }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ log.trigger_type }}</span></td>
+                    <td class="small text-muted">{{ log.request_time.strftime('%d-%b-%Y %H:%M:%S') if log.request_time else '' }}</td>
+                    <td class="small text-muted">{{ log.response_time_ms }} ms</td>
+                    <td class="small text-success fw-bold">+{{ log.records_inserted }}</td>
+                    <td class="small text-primary fw-bold">~{{ log.records_updated }}</td>
+                    <td>
+                        <span class="badge {% if log.status == 'SUCCESS' %}bg-success{% elif log.status == 'PARTIAL' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ log.status }}
+                        </span>
+                    </td>
+                    <td class="small text-danger" style="max-width: 250px;">
+                        {{ log.error_details or 'None' }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">No synchronization logs found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

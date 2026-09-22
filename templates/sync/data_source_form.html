@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{% if source %}Edit {{ source.source_name }}{% else %}New Official Data Source{% endif %} — ProjectPulse AI{% endblock %}
+{% block header_title %}{% if source %}Edit Official Data Source{% else %}Connect New Official Data Source{% endif %}{% endblock %}
+{% block breadcrumb %}Data Integration Architecture &bull; Official External Portals{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fa-solid fa-server text-primary me-2"></i>
+                    {% if source %}Configure Connector: {{ source.source_name }}{% else %}Register Official Government Data Source{% endif %}
+                </h5>
+                <small class="text-muted">Connect Central/State procurement portals, PWD project systems, water supply feeds, or webhook streams.</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{% if source %}{{ url_for('data_sync.edit_data_source', source_id=source.id) }}{% else %}{{ url_for('data_sync.new_data_source') }}{% endif %}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Official Source Name *</label>
+                        <input type="text" name="source_name" class="form-control" required value="{{ source.source_name if source else '' }}" placeholder="e.g. CPPP Central Public Procurement Portal">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Responsible Department / Ministry</label>
+                            <input type="text" name="department" class="form-control" value="{{ source.department if source else '' }}" placeholder="e.g. Ministry of Road Transport and Highways">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Integration Protocol / Source Type</label>
+                            <select name="source_type" class="form-select">
+                                {% for st in ['REST API', 'Data Feed', 'File Check (JSON/CSV)', 'Real-time Webhook'] %}
+                                <option value="{{ st }}" {% if source and source.source_type == st %}selected{% endif %}>{{ st }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">API Endpoint URL / Feed Target</label>
+                        <input type="url" name="endpoint_url" class="form-control font-monospace" value="{{ source.endpoint_url if source else '' }}" placeholder="https://eprocure.gov.in/api/v1/projects">
+                        <div class="form-text small">Leave blank to use internal representative adapter during prototype demonstration.</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Authentication Protocol</label>
+                            <select name="auth_method" class="form-select">
+                                {% for am in ['None', 'Bearer Token', 'API Key', 'OAuth2 Mutual TLS'] %}
+                                <option value="{{ am }}" {% if source and source.auth_method == am %}selected{% endif %}>{{ am }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Authentication Secret / API Key</label>
+                            <input type="password" name="auth_secret" class="form-control" placeholder="••••••••••••••••">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Sync Mode</label>
+                            <select name="sync_method" class="form-select">
+                                <option value="Polling" {% if not source or source.sync_method == 'Polling' %}selected{% endif %}>Scheduled Polling</option>
+                                <option value="Webhook" {% if source and source.sync_method == 'Webhook' %}selected{% endif %}>Real-time Webhook</option>
+                                <option value="Manual" {% if source and source.sync_method == 'Manual' %}selected{% endif %}>Manual Trigger Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Sync Frequency</label>
+                            <select name="sync_frequency" class="form-select">
+                                <option value="5 minutes" {% if source and source.sync_frequency == '5 minutes' %}selected{% endif %}>Every 5 minutes</option>
+                                <option value="15 minutes" {% if source and source.sync_frequency == '15 minutes' %}selected{% endif %}>Every 15 minutes</option>
+                                <option value="30 minutes" {% if source and source.sync_frequency == '30 minutes' %}selected{% endif %}>Every 30 minutes</option>
+                                <option value="1 hour" {% if not source or source.sync_frequency == '1 hour' %}selected{% endif %}>Every 1 hour</option>
+                                <option value="Daily" {% if source and source.sync_frequency == 'Daily' %}selected{% endif %}>Daily (00:00 UTC)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Source Priority (1 = Highest)</label>
+                            <input type="number" name="source_priority" class="form-control" min="1" max="10" value="{{ source.source_priority if source else 1 }}">
+                        </div>
+                    </div>
+
+                    {% if source %}
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if source.is_active %}checked{% endif %}>
+                        <label class="form-check-label small fw-semibold" for="isActive">
+                            Data Source is Active and Scheduled for Continuous Sync
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between border-top pt-3">
+                        <a href="{{ url_for('data_sync.data_sources') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Data Source Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

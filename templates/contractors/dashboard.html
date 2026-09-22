@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Contractor Intelligence & Performance — ProjectPulse AI{% endblock %}
+{% block header_title %}Construction Company & Contractor Intelligence{% endblock %}
+{% block breadcrumb %}Verified Performance Records, Materials & Quality Analytics{% endblock %}
+
+{% block content %}
+<!-- Section 25 Compliance Notice -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center gap-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <i class="fa-solid fa-scale-balanced text-primary fs-4"></i>
+    <div class="small">
+        <strong>Section 25 Verified Intelligence Standard:</strong>
+        This intelligence repository presents strictly verified factual records, BIS laboratory test results, field inspection measurements, and documented delay causes. Entities are evaluated purely on empirical performance data without subjective ratings or labels.
+    </div>
+</div>
+
+<!-- 10 KPI Overview Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-semibold">Contractors</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ stats.total_contractors }}</div>
+            <div class="small text-muted mt-auto"><i class="fa-solid fa-building text-primary me-1"></i> Registered Entities</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-semibold">Contract Value</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ stats.total_contract_value | inr }}</div>
+            <div class="small text-muted mt-auto"><i class="fa-solid fa-indian-rupee-sign text-success me-1"></i> Total Awarded</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-semibold">Total Projects</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ stats.total_projects_handled }}</div>
+            <div class="small text-muted mt-auto"><i class="fa-solid fa-diagram-project text-info me-1"></i> Linked Works</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-semibold">On-Schedule Rate</div>
+            <div class="fs-4 fw-bold {% if stats.on_schedule_rate >= 80 %}text-success{% elif stats.on_schedule_rate >= 50 %}text-warning{% else %}text-danger{% endif %} mt-1">
+                {{ stats.on_schedule_rate }}%
+            </div>
+            <div class="small text-muted mt-auto"><i class="fa-solid fa-clock-rotate-left me-1"></i> Delivery On Time</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-semibold">Lab Test Pass Rate</div>
+            <div class="fs-4 fw-bold {% if stats.material_pass_rate >= 90 %}text-success{% elif stats.material_pass_rate >= 75 %}text-warning{% else %}text-danger{% endif %} mt-1">
+                {{ stats.material_pass_rate }}%
+            </div>
+            <div class="small text-muted mt-auto"><i class="fa-solid fa-vial text-primary me-1"></i> BIS Quality Tests</div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="text-muted small text-uppercase fw-semibold">Active Inquiries</div>
+            <div class="fs-4 fw-bold {% if stats.open_complaints > 0 %}text-warning{% else %}text-success{% endif %} mt-1">
+                {{ stats.open_complaints }}
+            </div>
+            <div class="small text-muted mt-auto"><i class="fa-solid fa-clipboard-question text-warning me-1"></i> Citizen Grievances</div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3 bg-light">
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Total Cost Variance</span>
+                <span class="badge {% if stats.total_cost_variance <= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ stats.total_cost_variance_pct }}%
+                </span>
+            </div>
+            <div class="fs-5 fw-bold mt-2">{{ stats.total_cost_variance | inr }}</div>
+            <div class="small text-muted">Original vs Final Approved</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3 bg-light">
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Total Delay Days</span>
+                <span class="badge bg-danger">{{ stats.total_delay_days }} Days</span>
+            </div>
+            <div class="fs-5 fw-bold mt-2">{{ stats.avg_delay_days }} Days Avg</div>
+            <div class="small text-muted">Across Delayed Projects</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3 bg-light">
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Quality Inspections</span>
+                <span class="badge bg-primary">{{ stats.total_quality_tests }} Tests</span>
+            </div>
+            <div class="fs-5 fw-bold mt-2 text-danger">{{ stats.failed_quality_tests }} Failed Batches</div>
+            <div class="small text-muted">Rectification Enforced</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3 bg-light">
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Post-Construction Audits</span>
+                <span class="badge bg-info text-white">DLP Active</span>
+            </div>
+            <div class="fs-5 fw-bold mt-2">{{ stats.post_construction_audits }} Structures</div>
+            <div class="small text-muted">Defect Liability Monitoring</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Delay Cause Distribution across 8 Categories</h6>
+                <a href="{{ url_for('contractors.delays_explorer') }}" class="btn btn-sm btn-outline-primary py-0">Explore All</a>
+            </div>
+            <div class="card-body">
+                <canvas id="delayCategoryChart" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-vial-circle-check text-success me-2"></i>Material Testing & BIS Quality Compliance</h6>
+                <a href="{{ url_for('contractors.materials_explorer') }}" class="btn btn-sm btn-outline-success py-0">Material Explorer</a>
+            </div>
+            <div class="card-body">
+                <canvas id="materialQualityChart" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registered Contractors Summary Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0 fw-bold"><i class="fa-solid fa-building text-primary me-2"></i>Major Construction Companies & Contractors</h5>
+            <small class="text-muted">Empirical delivery metrics and laboratory test records</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('contractors.index') }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-list me-1"></i> View Full Registry
+            </a>
+            {% if current_user.role in ['admin', 'officer'] %}
+            <a href="{{ url_for('contractors.new_contractor') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-plus me-1"></i> Register Company
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Company / Contractor</th>
+                    <th>Class / Type</th>
+                    <th>Projects</th>
+                    <th>On-Schedule</th>
+                    <th>Cost Escalation</th>
+                    <th>Lab Pass Rate</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in top_contractors %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="fw-semibold text-decoration-none text-dark d-block">
+                            {{ c.name }}
+                        </a>
+                        <small class="text-muted"><i class="fa-solid fa-id-card me-1"></i> {{ c.contractor_code }} &bull; Reg: {{ c.registration_number }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ c.contractor_class or 'Class-1' }}</span>
+                        <div class="small text-muted">{{ c.company_type }}</div>
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ c.total_projects }}</span>
+                        <div class="small text-muted">{{ c.completed_projects }} Done &bull; {{ c.ongoing_projects }} Active</div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold {% if c.on_schedule_rate >= 80 %}text-success{% elif c.on_schedule_rate >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ c.on_schedule_rate }}%
+                            </span>
+                            <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                <div class="progress-bar {% if c.on_schedule_rate >= 80 %}bg-success{% elif c.on_schedule_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ c.on_schedule_rate }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if c.total_cost_variance <= 0 %}
+                        <span class="text-success small fw-semibold"><i class="fa-solid fa-circle-check me-1"></i> Within Budget</span>
+                        {% else %}
+                        <span class="text-danger small fw-semibold">+{{ c.total_cost_variance_pct }}% (₹{{ c.total_cost_variance }} Cr)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if c.test_pass_rate >= 90 %}bg-success{% elif c.test_pass_rate >= 75 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ c.test_pass_rate }}%
+                        </span>
+                        <small class="text-muted d-block">{{ c.total_quality_tests }} Tested</small>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                            Full Dossier <i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        No contractor intelligence records currently available.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Two-Column Operational Activity Feed -->
+<div class="row g-4">
+    <!-- Recent Quality Tests -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-microscope text-primary me-2"></i>Recent BIS Laboratory Quality Tests</h6>
+                <a href="{{ url_for('contractors.materials_explorer') }}" class="small text-decoration-none">View All</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for t in recent_tests %}
+                <div class="list-group-item px-3 py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="fw-semibold">{{ t.test_name }}</span>
+                            <span class="text-muted small">({{ t.required_standard or 'IS Standard' }})</span>
+                            <div class="small text-muted">
+                                Result: <strong class="text-dark">{{ t.test_result_value }}</strong> &bull; Lab: {{ t.testing_laboratory }}
+                            </div>
+                        </div>
+                        <span class="badge {% if t.status == 'PASS' %}bg-success{% elif t.status == 'FAIL' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ t.status }}
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted small">No recent lab tests found.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Delay Root Cause Logs -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-business-time text-danger me-2"></i>Documented Delay Root Causes</h6>
+                <a href="{{ url_for('contractors.delays_explorer') }}" class="small text-decoration-none">View All</a>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for d in recent_delays %}
+                <div class="list-group-item px-3 py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge bg-secondary me-1">{{ d.delay_category }}</span>
+                            <span class="fw-semibold text-dark">{{ d.project.project_code if d.project else 'Project' }}</span>
+                            <div class="small text-muted text-truncate" style="max-width: 340px;">
+                                {{ d.delay_description }}
+                            </div>
+                            <div class="small text-muted">
+                                Authority: {{ d.responsible_authority or 'Official Review' }}
+                            </div>
+                        </div>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                            +{{ d.affected_days }} Days
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-3 text-center text-muted small">No recent delay root causes logged.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Delay Category Chart
+    const delayData = {{ stats.delay_category_distribution | tojson }};
+    const delayLabels = Object.keys(delayData);
+    const delayValues = Object.values(delayData);
+    
+    const ctxDelay = document.getElementById('delayCategoryChart');
+    if (ctxDelay) {
+        new Chart(ctxDelay, {
+            type: 'bar',
+            data: {
+                labels: delayLabels,
+                datasets: [{
+                    label: 'Delay Incidents Count',
+                    data: delayValues,
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+                        '#8b5cf6', '#06b6d4', '#ec4899', '#64748b'
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    // 2. Material Quality Chart
+    const ctxMat = document.getElementById('materialQualityChart');
+    if (ctxMat) {
+        new Chart(ctxMat, {
+            type: 'doughnut',
+            data: {
+                labels: ['Passed BIS Specification', 'Failed Quality Standards', 'Conditional / Remediation'],
+                datasets: [{
+                    data: [
+                        {{ stats.passed_quality_tests }},
+                        {{ stats.failed_quality_tests }},
+                        Math.max(0, {{ stats.total_quality_tests }} - {{ stats.passed_quality_tests }} - {{ stats.failed_quality_tests }})
+                    ],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

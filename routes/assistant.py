@@ -41,7 +41,7 @@ def index():
 @limiter.limit("20 per minute")
 def api_chat():
     data = request.get_json(silent=True) or {}
-    user_query = str(data.get('query', '')).strip()
+    user_query = str(data.get('query') or data.get('message', '')).strip()
     
     if not user_query:
         return jsonify({

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}{{ branch.branch_name }} — {{ contractor.name }}{% endblock %}
+{% block header_title %}{{ branch.branch_name }}{% endblock %}
+{% block breadcrumb %}Regional Branch Profile &bull; {{ contractor.name }}{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="fa-solid fa-code-branch text-primary me-2"></i>{{ branch.branch_name }}</h4>
+                <div class="text-muted">
+                    Parent Organization: <a href="{{ url_for('contractors.detail', contractor_id=contractor.id) }}" class="fw-semibold text-decoration-none">{{ contractor.name }}</a>
+                </div>
+            </div>
+            <span class="badge {% if branch.is_active %}bg-success{% else %}bg-secondary{% endif %} fs-6">
+                {% if branch.is_active %}Operational Branch{% else %}Inactive{% endif %}
+            </span>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <div class="col-md-6">
+                <h6 class="fw-bold border-bottom pb-2 mb-3">Branch Location & Jurisdiction</h6>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-4 text-muted">Operating State:</dt>
+                    <dd class="col-sm-8 fw-semibold">{{ branch.location }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Full Address:</dt>
+                    <dd class="col-sm-8">{{ branch.address }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Branch GSTIN:</dt>
+                    <dd class="col-sm-8 font-monospace">{{ branch.gstin or 'N/A' }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold border-bottom pb-2 mb-3">Branch Contact & Administration</h6>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-4 text-muted">Branch Head:</dt>
+                    <dd class="col-sm-8 fw-semibold">{{ branch.contact_person }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Branch Phone:</dt>
+                    <dd class="col-sm-8">{{ branch.contact_phone }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Branch Email:</dt>
+                    <dd class="col-sm-8">{{ branch.contact_email }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regional Projects Managed by this Branch -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-diagram-project text-primary me-2"></i>Projects Managed by this Regional Branch</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase">
+                <tr>
+                    <th>Project</th>
+                    <th>Sector</th>
+                    <th>Cost</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in branch_projects %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-bold text-decoration-none text-dark">
+                            {{ p.project_name }}
+                        </a>
+                        <div class="small text-muted font-monospace">{{ p.project_code }} &bull; {{ p.location }}</div>
+                    </td>
+                    <td>{{ p.sector }}</td>
+                    <td>{{ p.approved_cost | inr }}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small fw-semibold">{{ p.physical_progress }}%</span>
+                            <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                <div class="progress-bar bg-primary" style="width: {{ p.physical_progress }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {% if p.project_status == 'Completed' %}bg-success{% elif p.project_status == 'Delayed' %}bg-danger{% else %}bg-primary{% endif %}">
+                            {{ p.project_status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="btn btn-sm btn-outline-primary">
+                            Details <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No projects currently associated with this regional branch.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

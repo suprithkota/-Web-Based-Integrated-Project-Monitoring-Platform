@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Log Site Inspection — ProjectPulse AI{% endblock %}
+{% block header_title %}Site Inspection & Field Measurement Entry{% endblock %}
+{% block breadcrumb %}Physical Measurements, Stage Verification & Geo-Tagged Evidence{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-ruler-combined text-primary me-2"></i>Official Site Inspection Record</h5>
+                <small class="text-muted">Recorded by {{ current_user.full_name or current_user.username }} ({{ current_user.technical_designation or 'Junior Engineer' }}). Will be queued for Executive Engineer (EE) technical certification.</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('engineering.new_inspection') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Project Selection -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Target Infrastructure Project *</label>
+                        <select name="project_id" class="form-select" required>
+                            <option value="">Select Monitored Project...</option>
+                            {% for p in projects %}
+                            <option value="{{ p.id }}" {% if preselected_project_id == p.id %}selected{% endif %}>
+                                {{ p.project_code }} - {{ p.project_name }} ({{ p.sector }} &bull; {{ p.location }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Inspection Date *</label>
+                            <input type="date" name="inspection_date" class="form-control" required value="{{ date.today().isoformat() if date else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Construction Stage Inspected *</label>
+                            <select name="stage_inspected" class="form-select" required>
+                                <option value="Excavation & Foundation">Excavation & Foundation</option>
+                                <option value="Substructure & Pier Casting">Substructure & Pier Casting</option>
+                                <option value="Superstructure & Girder Erection">Superstructure & Girder Erection</option>
+                                <option value="Deck Slab & Pre-Stressing">Deck Slab & Pre-Stressing</option>
+                                <option value="Bituminous Paving & Surfacing">Bituminous Paving & Surfacing</option>
+                                <option value="Finishing, Signage & Safety Barriers">Finishing, Signage & Safety Barriers</option>
+                                <option value="Trial Run & Commissioning">Trial Run & Commissioning</option>
+                                <option value="Post-Handover Maintenance">Post-Handover Maintenance</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Work Completed & Progress -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Measured Physical Progress (%) *</label>
+                            <input type="number" step="0.1" min="0" max="100" name="work_completed_percentage" class="form-control" required placeholder="e.g. 64.5">
+                            <div class="form-text small">Updates project physical progress if verified higher than previous.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Quality Assessment on Site</label>
+                            <select name="quality_rating" class="form-select">
+                                <option value="Satisfactory">Conforms to Specifications (Satisfactory)</option>
+                                <option value="Minor Rectification Required">Minor Non-Conformity (Rectification Required)</option>
+                                <option value="Critical Defect">Critical Defect (Stop Work Notice / Retest Required)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Measurements -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Field Measurements & Structural Quantification *</label>
+                        <textarea name="measurements_recorded" class="form-control" rows="4" required placeholder="Enter precise measurements, e.g.:
+- Concrete poured: M40 grade 450 cum at Pier P-14
+- Rebar steel tied: Fe500D 38 metric tonnes verified against BBS
+- Pavement width: 14.5m paved with DBM thickness 100mm
+- Slump test value: 115mm (IS 1199)"></textarea>
+                    </div>
+
+                    <!-- GPS Coordinates Detection -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">Site Latitude (GPS)</label>
+                            <input type="number" step="any" name="gps_latitude" id="insp_lat" class="form-control font-monospace" placeholder="e.g. 28.6139">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-semibold">Site Longitude (GPS)</label>
+                            <input type="number" step="any" name="gps_longitude" id="insp_lng" class="form-control font-monospace" placeholder="e.g. 77.2090">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="detectInspectionLocation()">
+                                <i class="fa-solid fa-location-crosshairs me-1"></i> Capture
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Photo Uploads -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Upload Inspection Photos & Field Evidence</label>
+                        <input type="file" name="inspection_photos" class="form-control" multiple accept="image/*">
+                        <div class="form-text small">Select multiple photos. Cryptographic SHA-256 hash will be generated for tamper-evident chain of custody.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between border-top pt-3">
+                        <a href="{{ url_for('engineering.dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Submit Site Inspection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function detectInspectionLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            document.getElementById('insp_lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('insp_lng').value = pos.coords.longitude.toFixed(6);
+        }, function(err) {
+            alert("Location capture failed: " + err.message);
+        });
+    } else {
+        alert("Geolocation not supported by this browser.");
+    }
+}
+</script>
+{% endblock %}

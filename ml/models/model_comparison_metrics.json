@@ -1,0 +1,92 @@
+{
+    "metadata": {
+        "dataset": "Calibrated Infrastructure Project Telemetry (1,500 samples, 80/20 train/test split)",
+        "evaluation_strategy": "Independent Holdout Test Set (Zero Data Leakage)",
+        "total_samples": 1500,
+        "test_samples": 300
+    },
+    "regression": {
+        "Random Forest": {
+            "task": "Continuous Risk Score Prediction (0-100)",
+            "MAE": 2.63,
+            "RMSE": 3.473,
+            "R2": 0.922,
+            "primary_model": true,
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/risk_engine.joblib"
+        },
+        "XGBoost": {
+            "task": "Continuous Risk Score Prediction (0-100)",
+            "MAE": 2.777,
+            "RMSE": 3.486,
+            "R2": 0.921,
+            "primary_model": false,
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/xgboost_risk_model.joblib"
+        },
+        "LightGBM": {
+            "task": "Continuous Risk Score Prediction (0-100)",
+            "MAE": 2.585,
+            "RMSE": 3.239,
+            "R2": 0.932,
+            "primary_model": false,
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/lightgbm_risk_model.joblib"
+        }
+    },
+    "classification": {
+        "XGBoost Classifier": {
+            "task": "Risk Level Category (LOW, MEDIUM, HIGH, CRITICAL)",
+            "accuracy": 0.913,
+            "precision": 0.914,
+            "recall": 0.913,
+            "f1_score": 0.909,
+            "type": "Gradient Boosted Trees Classifier",
+            "status": "OPERATIONAL"
+        },
+        "LightGBM Classifier": {
+            "task": "Risk Level Category (LOW, MEDIUM, HIGH, CRITICAL)",
+            "accuracy": 0.923,
+            "precision": 0.924,
+            "recall": 0.923,
+            "f1_score": 0.922,
+            "type": "LightGBM Decision Trees",
+            "status": "OPERATIONAL"
+        },
+        "Logistic Regression": {
+            "task": "Risk Level Category (LOW, MEDIUM, HIGH, CRITICAL)",
+            "accuracy": 0.913,
+            "precision": 0.914,
+            "recall": 0.913,
+            "f1_score": 0.913,
+            "type": "Linear Interpretable Classifier",
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/logistic_regression_model.joblib"
+        },
+        "Support Vector Machine": {
+            "task": "Risk Level Category (LOW, MEDIUM, HIGH, CRITICAL)",
+            "accuracy": 0.907,
+            "precision": 0.893,
+            "recall": 0.907,
+            "f1_score": 0.9,
+            "type": "Kernel Non-Linear Classifier (RBF)",
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/svm_model.joblib"
+        }
+    },
+    "unsupervised": {
+        "K-Means Clustering": {
+            "task": "Risk Archetype Grouping",
+            "k_clusters": 4,
+            "inertia": 12631.5,
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/kmeans_model.joblib"
+        },
+        "Isolation Forest": {
+            "task": "Indicator Anomaly Detection",
+            "contamination": 0.08,
+            "status": "OPERATIONAL",
+            "artifact": "ml/models/isolation_forest_model.joblib"
+        }
+    }
+}
