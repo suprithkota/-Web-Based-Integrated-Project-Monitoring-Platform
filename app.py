@@ -64,8 +64,8 @@ def create_app(config_class=Config):
     app.register_blueprint(engineering_bp)
     app.register_blueprint(data_sync_bp)
 
-    # Start background synchronization daemon (disabled in testing mode)
-    if not app.config.get('TESTING'):
+    # Start background synchronization daemon (disabled in testing mode or serverless)
+    if not app.config.get('TESTING') and not os.environ.get('AWS_LAMBDA_FUNCTION_NAME') and not os.environ.get('NETLIFY'):
         try:
             from services.sync_service import SyncService
             SyncService.start_background_scheduler(app)

@@ -7,13 +7,26 @@ class Config:
     APP_NAME = 'Web-Based Integrated Project-Monitoring Platform'
     SECRET_KEY = os.environ.get('SECRET_KEY', 'projectpulse-ai-gov-intel-key-2026')
     
-    # SQLite default, PostgreSQL ready
+    # SQLite default, PostgreSQL ready (with Netlify serverless /tmp support)
     db_url = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_URI')
     if not db_url:
-        instance_path = BASE_DIR / 'instance'
-        instance_path.mkdir(exist_ok=True)
-        db_file = (instance_path / 'project_monitoring.db').resolve().as_posix()
-        db_url = f"sqlite:///{db_file}"
+        if os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('NETLIFY'):
+            import shutil
+            import tempfile
+            tmp_db = Path(tempfile.gettempdir()) / 'project_monitoring.db'
+            seed_db = BASE_DIR / 'instance' / 'project_monitoring.db'
+            if seed_db.exists() and not tmp_db.exists():
+                try:
+                    shutil.copy2(seed_db, tmp_db)
+                except Exception:
+                    pass
+            db_file = tmp_db.resolve().as_posix()
+            db_url = f"sqlite:///{db_file}"
+        else:
+            instance_path = BASE_DIR / 'instance'
+            instance_path.mkdir(exist_ok=True)
+            db_file = (instance_path / 'project_monitoring.db').resolve().as_posix()
+            db_url = f"sqlite:///{db_file}"
     
     SQLALCHEMY_DATABASE_URI = db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
