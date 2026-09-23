@@ -1,8 +1,12 @@
 import sqlite3
 from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 def ensure_database_schema(db_path="instance/project_monitoring.db"):
     db_file = Path(db_path)
+    if not db_file.is_absolute():
+        db_file = BASE_DIR / db_file
     if not db_file.exists():
         return
 

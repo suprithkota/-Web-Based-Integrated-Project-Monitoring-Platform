@@ -1,26 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}AI Project Intelligence Assistant — ProjectPulse AI{% endblock %}
+{% block title %}AI Project Intelligence Assistant — Web-Based Integrated Project-Monitoring Platform{% endblock %}
 {% block header_title %}AI Project Intelligence Assistant{% endblock %}
 {% block breadcrumb %}Grounded Database Intelligence & Analytical Querying{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-10">
-        <!-- Suggested Prompts Chips Bar -->
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="small text-muted fw-bold text-uppercase">
-                    <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Frequently Asked Intelligence Inquiries:
+        <!-- 4-Mode AI Assistant Navigation -->
+        <div class="card border-0 shadow-sm mb-3 bg-white">
+            <div class="card-body p-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-1 flex-wrap" id="assistantModeGroup">
+                    <button type="button" class="btn btn-sm btn-primary active px-3 mode-btn" id="btnModeChat" data-mode="chat" onclick="setAssistantMode('chat')">
+                        <i class="fa-solid fa-comments me-1"></i> 💬 Text Chat
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 mode-btn" id="btnModeVoice" data-mode="voice" onclick="setAssistantMode('voice')">
+                        <i class="fa-solid fa-microphone me-1 text-danger"></i> 🎙️ Voice Assistant
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 mode-btn" id="btnModeData" data-mode="data" onclick="setAssistantMode('data')">
+                        <i class="fa-solid fa-chart-line me-1 text-primary"></i> 📊 Data Analysis
+                        {% if current_user.role == 'viewer' %}<span class="badge bg-secondary-subtle text-secondary small ms-1" style="font-size: 0.65rem;">Officer/Admin</span>{% endif %}
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 mode-btn" id="btnModeDocs" data-mode="docs" onclick="setAssistantMode('docs')">
+                        <i class="fa-solid fa-file-contract me-1 text-warning"></i> 📄 Document Questions
+                    </button>
                 </div>
-                <div class="form-check form-switch small">
-                    <input class="form-check-input" type="checkbox" id="voiceReadoutToggle" checked>
-                    <label class="form-check-label text-muted" for="voiceReadoutToggle">
-                        <i class="fa-solid fa-volume-high me-1"></i> Voice Readout (TTS)
-                    </label>
+
+                <div class="d-flex align-items-center gap-2">
+                    <div class="form-check form-switch small mb-0">
+                        <input class="form-check-input" type="checkbox" id="voiceReadoutToggle" checked>
+                        <label class="form-check-label text-muted small" for="voiceReadoutToggle">
+                            <i class="fa-solid fa-volume-high me-1"></i> Voice Readout (TTS)
+                        </label>
+                    </div>
                 </div>
             </div>
-            <div class="d-flex flex-wrap gap-1">
+        </div>
+
+        <!-- Mode-Specific Chips Container -->
+        <div class="mb-3">
+            <div class="small text-muted fw-bold text-uppercase mb-2" id="promptBarLabel">
+                <i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> <span id="promptModeTitle">Frequently Asked Intelligence Inquiries</span>:
+            </div>
+            
+            <!-- Chat Mode Prompts -->
+            <div id="prompts-chat" class="d-flex flex-wrap gap-1 mode-prompts">
                 <button type="button" class="prompt-chip" onclick="submitPrompt('How is Larsen & Toubro performing across its highway and civil projects?')">
                     <i class="fa-solid fa-building text-primary me-1"></i> L&T Performance Dossier
                 </button>
@@ -33,14 +57,50 @@
                 <button type="button" class="prompt-chip" onclick="submitPrompt('Which contractors have delivered 100% of their projects on schedule?')">
                     <i class="fa-solid fa-award text-warning me-1"></i> Top On-Schedule Contractors
                 </button>
-                <button type="button" class="prompt-chip" onclick="submitPrompt('What official government sources are feeding real-time data into the platform?')">
-                    <i class="fa-solid fa-network-wired text-info me-1"></i> Official Data Feeds
-                </button>
                 {% for prompt in sample_prompts %}
                 <button type="button" class="prompt-chip" onclick="submitPrompt('{{ prompt }}')">
                     <i class="fa-regular fa-comment-dots text-primary me-1"></i> {{ prompt }}
                 </button>
                 {% endfor %}
+            </div>
+
+            <!-- Voice Mode Prompts -->
+            <div id="prompts-voice" class="d-flex flex-wrap gap-1 mode-prompts d-none">
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Give me a voice summary of critical projects')">
+                    <i class="fa-solid fa-microphone text-danger me-1"></i> Voice Summary of Critical Works
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Which ministry has the highest delay rate?')">
+                    <i class="fa-solid fa-microphone text-danger me-1"></i> Ministry Delay Comparison
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('What is the national capital expenditure utilization?')">
+                    <i class="fa-solid fa-microphone text-danger me-1"></i> Capital Expenditure Status
+                </button>
+            </div>
+
+            <!-- Data Analysis Mode Prompts -->
+            <div id="prompts-data" class="d-flex flex-wrap gap-1 mode-prompts d-none">
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Run correlation analysis between schedule delay days and cost escalation')">
+                    <i class="fa-solid fa-chart-line text-primary me-1"></i> Delay vs Cost Correlation (r)
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Show statistical regression and sector risk distribution ranking')">
+                    <i class="fa-solid fa-layer-group text-info me-1"></i> Sector Risk Regression
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('List portfolio outliers with delay exceeding 1.5 standard deviations')">
+                    <i class="fa-solid fa-magnifying-glass-chart text-danger me-1"></i> Outlier Surveillance
+                </button>
+            </div>
+
+            <!-- Document Questions Mode Prompts -->
+            <div id="prompts-docs" class="d-flex flex-wrap gap-1 mode-prompts d-none">
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Show statutory documents and certificates for PRJ-0001')">
+                    <i class="fa-solid fa-file-shield text-warning me-1"></i> PRJ-0001 Clearance Orders
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('List all tamper-hash verified documents')">
+                    <i class="fa-solid fa-fingerprint text-success me-1"></i> Tamper-Hash Verified Records
+                </button>
+                <button type="button" class="prompt-chip" onclick="submitPrompt('Find environmental clearance EIA approvals')">
+                    <i class="fa-solid fa-leaf text-success me-1"></i> Environmental Clearance Documents
+                </button>
             </div>
         </div>
 
@@ -53,7 +113,7 @@
                         <div class="badge bg-primary text-white rounded-circle p-2">
                             <i class="fa-solid fa-robot"></i>
                         </div>
-                        <strong class="text-primary">ProjectPulse AI & Voice Assistant</strong>
+                        <strong class="text-primary">Web-Based Integrated Project-Monitoring Platform & Voice Assistant</strong>
                         <span class="badge bg-light text-secondary border small ms-auto">Grounding: Live SQLite DB</span>
                     </div>
                     <div>

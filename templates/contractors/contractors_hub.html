@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}Contractors Intelligence & Master Directory — Web-Based Integrated Project-Monitoring Platform{% endblock %}
+{% block header_title %}Contractors Command Hub{% endblock %}
+{% block breadcrumb %}Integrated Contractor Performance, Directory, Schedule & Quality Verification{% endblock %}
+
+{% block content %}
+<!-- Section 25 Compliance Notice -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-scale-balanced text-primary fs-3"></i>
+        <div>
+            <div class="fw-bold">Section 25 Verified Contractor Intelligence Standard</div>
+            <small class="text-muted">
+                Presents strictly verified factual performance records, BIS laboratory test results, field inspection measurements, and documented delay causes.
+            </small>
+        </div>
+    </div>
+    {% if current_user.role in ['admin', 'officer'] %}
+    <div>
+        <a href="{{ url_for('contractors.new_contractor') }}" class="btn btn-primary btn-sm shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Register New Contractor
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 9-Tab Master Contractors Hub Navigation -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom p-0">
+        <ul class="nav nav-tabs card-header-tabs m-0 px-3 flex-wrap" id="contractorHubTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active py-3" data-bs-toggle="tab" data-bs-target="#tab-overview">
+                    <i class="fa-solid fa-gauge-high me-1"></i> 1. Overview
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-performance">
+                    <i class="fa-solid fa-chart-line me-1"></i> 2. Contractor Performance
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-directory">
+                    <i class="fa-solid fa-address-book me-1"></i> 3. Company Directory
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-projects">
+                    <i class="fa-solid fa-diagram-project me-1"></i> 4. Projects
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-schedule">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i> 5. Schedule Performance
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-cost">
+                    <i class="fa-solid fa-indian-rupee-sign me-1"></i> 6. Cost Performance
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-quality">
+                    <i class="fa-solid fa-vial-circle-check me-1"></i> 7. Quality Performance
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-verification">
+                    <i class="fa-solid fa-shield-halved me-1"></i> 8. Verification
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-documents">
+                    <i class="fa-solid fa-file-contract me-1"></i> 9. Documents
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body p-4">
+        <div class="tab-content">
+
+            <!-- 1. OVERVIEW TAB -->
+            <div class="tab-pane fade show active" id="tab-overview">
+                <!-- KPI Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="card border-0 shadow-sm p-3 h-100 bg-light">
+                            <div class="text-muted small text-uppercase fw-semibold">Contractors</div>
+                            <div class="fs-4 fw-bold text-dark mt-1">{{ stats.total_contractors }}</div>
+                            <div class="small text-muted mt-auto"><i class="fa-solid fa-building text-primary me-1"></i> Registered Entities</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="card border-0 shadow-sm p-3 h-100 bg-light">
+                            <div class="text-muted small text-uppercase fw-semibold">Contract Value</div>
+                            <div class="fs-4 fw-bold text-dark mt-1">{{ stats.total_contract_value | inr }}</div>
+                            <div class="small text-muted mt-auto"><i class="fa-solid fa-indian-rupee-sign text-success me-1"></i> Total Awarded</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="card border-0 shadow-sm p-3 h-100 bg-light">
+                            <div class="text-muted small text-uppercase fw-semibold">Total Projects</div>
+                            <div class="fs-4 fw-bold text-dark mt-1">{{ stats.total_projects_handled }}</div>
+                            <div class="small text-muted mt-auto"><i class="fa-solid fa-diagram-project text-info me-1"></i> Linked Works</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="card border-0 shadow-sm p-3 h-100 bg-light">
+                            <div class="text-muted small text-uppercase fw-semibold">On-Schedule Rate</div>
+                            <div class="fs-4 fw-bold {% if stats.on_schedule_rate >= 80 %}text-success{% elif stats.on_schedule_rate >= 50 %}text-warning{% else %}text-danger{% endif %} mt-1">
+                                {{ stats.on_schedule_rate }}%
+                            </div>
+                            <div class="small text-muted mt-auto"><i class="fa-solid fa-clock-rotate-left me-1"></i> On-Time Delivery</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="card border-0 shadow-sm p-3 h-100 bg-light">
+                            <div class="text-muted small text-uppercase fw-semibold">Lab Pass Rate</div>
+                            <div class="fs-4 fw-bold {% if stats.material_pass_rate >= 90 %}text-success{% elif stats.material_pass_rate >= 75 %}text-warning{% else %}text-danger{% endif %} mt-1">
+                                {{ stats.material_pass_rate }}%
+                            </div>
+                            <div class="small text-muted mt-auto"><i class="fa-solid fa-vial text-primary me-1"></i> BIS Quality Tests</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="card border-0 shadow-sm p-3 h-100 bg-light">
+                            <div class="text-muted small text-uppercase fw-semibold">Active Inquiries</div>
+                            <div class="fs-4 fw-bold {% if stats.open_complaints > 0 %}text-warning{% else %}text-success{% endif %} mt-1">
+                                {{ stats.open_complaints }}
+                            </div>
+                            <div class="small text-muted mt-auto"><i class="fa-solid fa-clipboard-question text-warning me-1"></i> Grievances</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Contractors Highlights -->
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-trophy text-warning me-2"></i>Major Infrastructure Contractors & On-Time Performance</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor Name</th>
+                                <th>Code & Reg</th>
+                                <th>Type & Class</th>
+                                <th>Works</th>
+                                <th>Award Value</th>
+                                <th>On-Schedule Rate</th>
+                                <th>Quality Pass Rate</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in top_contractors %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ c.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ c.contractor_code }}</span>
+                                </td>
+                                <td class="small">{{ c.company_type }} &bull; {{ c.contractor_class }}</td>
+                                <td><span class="badge bg-primary-subtle text-primary border">{{ c.metrics.total_projects }} Projects</span></td>
+                                <td class="fw-bold">{{ c.metrics.total_contract_value | inr }}</td>
+                                <td>
+                                    <span class="badge {% if c.metrics.on_schedule_rate >= 80 %}bg-success{% elif c.metrics.on_schedule_rate >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ c.metrics.on_schedule_rate }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if c.metrics.test_pass_rate >= 90 %}bg-success{% elif c.metrics.test_pass_rate >= 75 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ c.metrics.test_pass_rate }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fa-solid fa-eye me-1"></i> Dossier
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. CONTRACTOR PERFORMANCE TAB -->
+            <div class="tab-pane fade" id="tab-performance">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor</th>
+                                <th>Completed Works</th>
+                                <th>Ongoing Works</th>
+                                <th>Schedule Delivery Rate</th>
+                                <th>Cost Variance</th>
+                                <th>Avg Delay</th>
+                                <th>BIS Quality Pass</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contractors %}
+                            <tr>
+                                <td class="fw-bold">
+                                    <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="text-dark text-decoration-none">
+                                        {{ c.name }}
+                                    </a>
+                                    <div class="small text-muted">{{ c.contractor_code }}</div>
+                                </td>
+                                <td>{{ c.completed_projects }} works</td>
+                                <td>{{ c.ongoing_projects }} active</td>
+                                <td>
+                                    <span class="badge {% if (c.on_schedule_rate|default(0)) >= 80 %}bg-success{% elif (c.on_schedule_rate|default(0)) >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ c.on_schedule_rate|default(0) }}%
+                                    </span>
+                                </td>
+                                <td class="fw-semibold {% if (c.total_cost_variance|default(0)) > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ c.total_cost_variance|default(0) | inr }}
+                                </td>
+                                <td class="small">{{ c.avg_delay_days|default(0) }} days</td>
+                                <td>
+                                    <span class="badge {% if (c.quality_pass_rate|default(100)) >= 90 %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ c.quality_pass_rate|default(100) }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ c.registration_status }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. COMPANY DIRECTORY TAB -->
+            <div class="tab-pane fade" id="tab-directory">
+                <!-- Search & Filters -->
+                <form method="GET" action="{{ url_for('contractors.index') }}" class="row g-2 align-items-end mb-4 p-3 bg-light rounded">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> Search Directory</label>
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by name, code, or registration..." value="{{ filters.search }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Company Type</label>
+                        <select name="company_type" class="form-select form-select-sm">
+                            <option value="">All Types</option>
+                            {% for ct in company_types %}
+                            <option value="{{ ct }}" {% if filters.company_type == ct %}selected{% endif %}>{{ ct }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Contractor Class</label>
+                        <select name="contractor_class" class="form-select form-select-sm">
+                            <option value="">All Classes</option>
+                            {% for cc in contractor_classes %}
+                            <option value="{{ cc }}" {% if filters.contractor_class == cc %}selected{% endif %}>{{ cc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1" style="height: 33px;">Filter</button>
+                        <a href="{{ url_for('contractors.index') }}" class="btn btn-outline-secondary btn-sm" style="height: 33px;">Reset</a>
+                    </div>
+                </form>
+
+                <div class="row g-3">
+                    {% for c in contractors %}
+                    <div class="col-lg-6">
+                        <div class="card border rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">
+                                        <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="text-dark text-decoration-none">
+                                            {{ c.name }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted font-monospace">{{ c.contractor_code }} &bull; Reg: {{ c.registration_number }}</small>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">{{ c.registration_status }}</span>
+                            </div>
+                            <div class="small text-secondary mb-3">
+                                <div><i class="fa-solid fa-building me-1 text-muted"></i> <strong>Type:</strong> {{ c.company_type }} &bull; <strong>Class:</strong> {{ c.contractor_class }}</div>
+                                <div><i class="fa-solid fa-location-dot me-1 text-muted"></i> <strong>HQ:</strong> {{ c.headquarters or 'India' }} &bull; <strong>Exp:</strong> {{ c.years_of_experience }} Years</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                                <span class="small text-muted">Projects: <strong>{{ c.total_projects }}</strong> &bull; Value: <strong>{{ c.total_contract_value | inr }}</strong></span>
+                                <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                                    View Dossier <i class="fa-solid fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 4. PROJECTS TAB -->
+            <div class="tab-pane fade" id="tab-projects">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project Code & Name</th>
+                                <th>Executing Contractor</th>
+                                <th>Sector & State</th>
+                                <th>Approved Outlay</th>
+                                <th>Physical Progress</th>
+                                <th>Delay</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in all_projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ p.project_name }}
+                                    </a>
+                                    <div class="small text-muted font-monospace">{{ p.project_code }}</div>
+                                </td>
+                                <td>
+                                    {% if p.contractor %}
+                                    <a href="{{ url_for('contractors.detail', contractor_id=p.contractor.id) }}" class="fw-semibold text-primary text-decoration-none small">
+                                        {{ p.contractor.name }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted small">Departmental Execution</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ p.sector }} &bull; {{ p.state }}</td>
+                                <td class="fw-bold small">{{ p.approved_cost | inr }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px; width: 70px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ p.physical_progress }}%;"></div>
+                                        </div>
+                                        <span class="small font-monospace">{{ p.physical_progress }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold {% if p.delay_days > 60 %}text-danger{% elif p.delay_days > 0 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ p.delay_days }} d
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary border small">{{ p.project_status }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. SCHEDULE PERFORMANCE TAB -->
+            <div class="tab-pane fade" id="tab-schedule">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor</th>
+                                <th>On-Schedule Delivery</th>
+                                <th>Completed On Time</th>
+                                <th>Delayed Projects</th>
+                                <th>Average Delay Days</th>
+                                <th>Performance Tier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contractors %}
+                            <tr>
+                                <td class="fw-bold">{{ c.name }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px; width: 100px;">
+                                            <div class="progress-bar {% if c.on_schedule_rate >= 80 %}bg-success{% elif c.on_schedule_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ c.on_schedule_rate }}%;"></div>
+                                        </div>
+                                        <span class="fw-bold small">{{ c.on_schedule_rate }}%</span>
+                                    </div>
+                                </td>
+                                <td class="small">{{ c.completed_on_schedule }} Works</td>
+                                <td class="small text-danger fw-semibold">{{ c.delayed_projects }} Delayed</td>
+                                <td class="small fw-bold">{{ c.avg_delay_days }} Days</td>
+                                <td>
+                                    <span class="badge {% if c.on_schedule_rate >= 80 %}bg-success{% elif c.on_schedule_rate >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {% if c.on_schedule_rate >= 80 %}High Reliability{% elif c.on_schedule_rate >= 50 %}Moderate Risk{% else %}Severe Delays{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 6. COST PERFORMANCE TAB -->
+            <div class="tab-pane fade" id="tab-cost">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor</th>
+                                <th>Awarded Value</th>
+                                <th>Final Anticipated Cost</th>
+                                <th>Cost Variance</th>
+                                <th>Cost Escalation %</th>
+                                <th>Disbursement Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contractors %}
+                            <tr>
+                                <td class="fw-bold">{{ c.name }}</td>
+                                <td>{{ c.total_contract_value | inr }}</td>
+                                <td>{{ c.total_final_cost | inr }}</td>
+                                <td class="fw-bold {% if c.total_cost_variance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ c.total_cost_variance | inr }}
+                                </td>
+                                <td>
+                                    <span class="badge {% if (c.cost_variance_pct|default(c.total_cost_variance_pct|default(0))) > 10 %}bg-danger{% elif (c.cost_variance_pct|default(c.total_cost_variance_pct|default(0))) > 0 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        +{{ c.cost_variance_pct|default(c.total_cost_variance_pct|default(0)) }}%
+                                    </span>
+                                </td>
+                                <td><span class="badge bg-light text-secondary border">Audited Records</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 7. QUALITY PERFORMANCE TAB -->
+            <div class="tab-pane fade" id="tab-quality">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor</th>
+                                <th>BIS Lab Tests Logged</th>
+                                <th>Tests Passed</th>
+                                <th>Tests Failed</th>
+                                <th>Compliance Rate</th>
+                                <th>Standards Tracked</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contractors %}
+                            <tr>
+                                <td class="fw-bold">{{ c.name }}</td>
+                                <td>{{ c.tests_total }} Tests</td>
+                                <td class="text-success fw-bold">{{ c.tests_passed }} Passed</td>
+                                <td class="text-danger fw-bold">{{ c.tests_failed }} Failed</td>
+                                <td>
+                                    <span class="badge {% if c.quality_pass_rate >= 90 %}bg-success{% elif c.quality_pass_rate >= 75 %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">
+                                        {{ c.quality_pass_rate }}%
+                                    </span>
+                                </td>
+                                <td class="small text-muted">IS 1786 (Steel), IS 516 (Concrete), IS 269 (Cement)</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 8. VERIFICATION TAB -->
+            <div class="tab-pane fade" id="tab-verification">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor</th>
+                                <th>Registration No</th>
+                                <th>License No</th>
+                                <th>License Validity</th>
+                                <th>Verification Status</th>
+                                <th>Data Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contractors %}
+                            <tr>
+                                <td class="fw-bold">{{ c.name }}</td>
+                                <td class="font-monospace small">{{ c.registration_number }}</td>
+                                <td class="font-monospace small">{{ c.contractor_license_number or 'LIC-2024-DEF' }}</td>
+                                <td class="small">{{ c.license_validity_date or '31-Dec-2027' }}</td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="fa-solid fa-check me-1"></i> {{ c.verification_status or 'Verified' }}
+                                    </span>
+                                </td>
+                                <td class="small text-muted">{{ c.data_source or 'Central Contractor Registry' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 9. DOCUMENTS TAB -->
+            <div class="tab-pane fade" id="tab-documents">
+                {% if documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Document Title</th>
+                                <th>Linked Contractor / Project</th>
+                                <th>Document Type</th>
+                                <th>Uploaded Date</th>
+                                <th>Verification</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in documents %}
+                            <tr>
+                                <td class="fw-semibold small">{{ d.title }}</td>
+                                <td class="small">
+                                    {{ d.contractor.name if d.contractor else (d.project.project_name if d.project else 'General') }}
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ d.document_type }}</span></td>
+                                <td class="small text-muted">{{ d.upload_date.strftime('%d-%b-%Y') if d.upload_date else 'Recent' }}</td>
+                                <td><span class="badge bg-success-subtle text-success border border-success-subtle">Verified</span></td>
+                                <td>
+                                    <a href="{{ d.file_path }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-file-contract fs-1 mb-2"></i>
+                    <div>No uploaded contractor documents available.</div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

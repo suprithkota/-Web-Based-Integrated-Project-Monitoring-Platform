@@ -20,3 +20,4 @@ build/
 *.avi
 .env.local
 .env.*.local
+scratch/

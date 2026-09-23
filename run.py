@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unified Process Manager & Startup Controller for ProjectPulse AI
+Unified Process Manager & Startup Controller for Web-Based Integrated Project-Monitoring Platform
 Ensures:
 1. Exactly ONE backend server instance runs at a time.
 2. Stale or previous processes on the configured port are safely detected and stopped.
@@ -205,7 +205,7 @@ def print_banner(host: str, port: int, debug: bool):
     url = f"http://{host}:{port}" if host != '0.0.0.0' else f"http://127.0.0.1:{port}"
     banner = f"""
 ======================================================================
-  ProjectPulse AI - Intelligent Infrastructure Monitoring Platform
+  Web-Based Integrated Project-Monitoring Platform
 ======================================================================
   * Process ID (PID)   : {os.getpid()}
   * Port & Host        : {host}:{port}
@@ -219,6 +219,9 @@ def print_banner(host: str, port: int, debug: bool):
 
 
 def main():
+    # Always ensure working directory is the project root
+    os.chdir(BASE_DIR)
+
     host = os.environ.get('FLASK_HOST', '127.0.0.1')
     port = int(os.environ.get('PORT') or os.environ.get('FLASK_PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'false').lower() in ('true', '1')
@@ -253,7 +256,7 @@ def main():
     # Step 5: Start server with Werkzeug reloader DISABLED
     # Disabling the reloader guarantees exactly ONE process and eliminates overlapping output.
     try:
-        logger.info(f"Starting ProjectPulse AI backend server on {host}:{port}...")
+        logger.info(f"Starting Web-Based Integrated Project-Monitoring Platform backend server on {host}:{port}...")
         app.run(
             host=host,
             port=port,

@@ -63,6 +63,85 @@ def index():
         current_filter={'severity': severity, 'status': status, 'project_id': project_id}
     )
 
+@alerts_bp.route('/risk-intelligence')
+@alerts_bp.route('/risk-alerts', endpoint='risk_intelligence')
+@login_required
+def risk_intelligence():
+    from database.models import ProjectDelayRecord
+    from services.recommendation_service import generate_project_recommendations
+    from services.rbac_service import get_scoped_projects_query
+    
+    # 1. Alerts & Counts
+    base_query = Alert.query.join(Project)
+    if current_user.role == 'officer':
+        assigned_ids = current_user.get_authorized_project_ids() or []
+        base_query = base_query.filter(Alert.project_id.in_(assigned_ids)) if assigned_ids else base_query.filter(Alert.project_id == -1)
+    
+    alerts = base_query.filter(Alert.status.in_(['Open', 'Under Review'])).order_by(Alert.created_at.desc()).all()
+    
+    total_active = len(alerts)
+    critical_count = sum(1 for a in alerts if a.severity == 'CRITICAL')
+    high_count = sum(1 for a in alerts if a.severity == 'HIGH')
+    medium_count = sum(1 for a in alerts if a.severity == 'MEDIUM')
+    resolved_count = Alert.query.filter_by(status='Resolved').count()
+    
+    # 2. Critical Risks
+    p_query = get_scoped_projects_query(current_user)
+    critical_projects = p_query.filter(Project.risk_level == 'CRITICAL').order_by(Project.risk_score.desc()).all()
+    
+    # 3. Delayed Projects
+    delayed_projects = p_query.filter(Project.delay_days > 60).order_by(Project.delay_days.desc()).all()
+    
+    # 4. Cost Overruns
+    cost_overrun_projects = p_query.filter(Project.revised_cost > Project.approved_cost).order_by((Project.revised_cost - Project.approved_cost).desc()).all()
+    
+    # 5. Schedule Risks
+    schedule_risk_projects = p_query.filter(Project.milestones_delayed > 0).order_by(Project.milestones_delayed.desc()).all()
+    
+    # 6. Delay Causes
+    delay_records = ProjectDelayRecord.query.order_by(ProjectDelayRecord.recorded_at.desc()).limit(30).all()
+    delay_cat_stats = {}
+    for d in delay_records:
+        cat = d.delay_category or 'Other'
+        if cat not in delay_cat_stats:
+            delay_cat_stats[cat] = {'count': 0, 'total_days': 0}
+        delay_cat_stats[cat]['count'] += 1
+        delay_cat_stats[cat]['total_days'] += (d.affected_days or 0)
+        
+    # 7. AI Recommendations
+    recommendations = []
+    sample_projects = p_query.order_by(Project.risk_score.desc()).limit(5).all()
+    for sp in sample_projects:
+        recs = generate_project_recommendations(sp.to_dict())
+        for r in recs[:2]:
+            r['project_name'] = sp.project_name
+            recommendations.append(r)
+            
+    # 8. All projects for Simulator
+    all_projects = p_query.order_by(Project.project_name.asc()).all()
+    selected_project = all_projects[0] if all_projects else None
+
+    return render_template(
+        'risk_intelligence.html',
+        alerts=alerts,
+        counts={
+            'active': total_active,
+            'critical': critical_count,
+            'high': high_count,
+            'medium': medium_count,
+            'resolved': resolved_count
+        },
+        critical_projects=critical_projects,
+        delayed_projects=delayed_projects,
+        cost_overrun_projects=cost_overrun_projects,
+        schedule_risk_projects=schedule_risk_projects,
+        delay_records=delay_records,
+        delay_category_stats=delay_cat_stats,
+        recommendations=recommendations,
+        all_projects=all_projects,
+        selected_project=selected_project
+    )
+
 @alerts_bp.route('/alerts/<int:alert_id>/status', methods=['POST'])
 @officer_required
 def change_status(alert_id):

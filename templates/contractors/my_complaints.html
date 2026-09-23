@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}My Tracked Complaints — Web-Based Integrated Project-Monitoring Platform{% endblock %}
+{% block header_title %}My Tracked Grievances & Complaints{% endblock %}
+{% block breadcrumb %}Transparent Public Infrastructure Issue Tracker & Live Status{% endblock %}
+
+{% block content %}
+<!-- Header Notice -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-clipboard-check text-primary fs-3"></i>
+        <div>
+            <div class="fw-bold">Public Grievance Redressal Tracking</div>
+            <small class="text-muted">
+                Track submitted complaints, field inspections, assigned monitoring engineers, and resolution updates in real time.
+            </small>
+        </div>
+    </div>
+    <div>
+        <a href="{{ url_for('contractors.new_complaint') }}" class="btn btn-warning text-dark btn-sm shadow-sm fw-semibold">
+            <i class="fa-solid fa-bullhorn me-1"></i> Report New Issue
+        </a>
+    </div>
+</div>
+
+<!-- Search by Complaint Reference Code -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('contractors.my_complaints') }}" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label small fw-semibold text-muted mb-1">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> Track by Grievance Reference Code or Contact Number
+                </label>
+                <input type="text" name="ref" class="form-control form-control-sm" placeholder="e.g. CMP-2026-AB12CD or mobile number..." value="{{ search_ref }}">
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1" style="height: 33px;">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> Search / Track
+                </button>
+                <a href="{{ url_for('contractors.my_complaints') }}" class="btn btn-outline-secondary btn-sm" style="height: 33px;">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Complaints List & Timeline Cards -->
+{% if complaints %}
+<div class="row g-3">
+    {% for c in complaints %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-dark font-monospace">{{ c.complaint_code }}</span>
+                            <span class="badge {% if c.status == 'Resolved' %}bg-success{% elif c.status == 'Under Investigation' or c.status == 'Action Initiated' or c.status == 'In Review' %}bg-primary{% elif c.status == 'Rejected with Reason' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                <i class="fa-solid {% if c.status == 'Resolved' %}fa-check-circle{% elif c.status == 'Rejected with Reason' %}fa-circle-xmark{% else %}fa-clock{% endif %} me-1"></i>
+                                {{ c.status }}
+                            </span>
+                            <span class="badge bg-light text-secondary border">{{ c.category }}</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">{{ c.location }}</h5>
+                        <div class="small text-muted">
+                            {% if c.project %}
+                            <i class="fa-solid fa-diagram-project me-1"></i> Project: <a href="{{ url_for('projects.detail', project_id=c.project.id) }}" class="fw-semibold text-decoration-none">{{ c.project.project_name }} ({{ c.project.project_code }})</a> &bull;
+                            {% endif %}
+                            <i class="fa-regular fa-calendar ms-1 me-1"></i> Registered on: {{ c.created_at.strftime('%d-%b-%Y %H:%M') if c.created_at else 'Recent' }} &bull;
+                            <i class="fa-solid fa-building me-1 ms-1"></i> Department: {{ c.routed_department or 'Infrastructure Oversight' }}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('contractors.complaint_detail', complaint_id=c.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fa-solid fa-eye me-1"></i> View Full Details
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <p class="small text-secondary mb-3 bg-light p-3 rounded">
+                    {{ c.description }}
+                </p>
+
+                <!-- Investigation Notes & Resolution Timeline -->
+                {% if c.investigation_notes or c.resolution_action %}
+                <div class="p-3 border rounded bg-light mb-3">
+                    {% if c.investigation_notes %}
+                    <div class="small mb-2">
+                        <strong class="text-dark"><i class="fa-solid fa-clipboard-user text-primary me-1"></i> Official Inspection Finding:</strong>
+                        <span class="text-secondary">{{ c.investigation_notes }}</span>
+                    </div>
+                    {% endif %}
+                    {% if c.resolution_action %}
+                    <div class="small">
+                        <strong class="text-success"><i class="fa-solid fa-circle-check text-success me-1"></i> Resolution / Action Taken:</strong>
+                        <span class="text-secondary">{{ c.resolution_action }}</span>
+                        {% if c.resolution_date %}
+                        <span class="text-muted small">({{ c.resolution_date.strftime('%d-%b-%Y') }})</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Complainant & Tracking Footer -->
+                <div class="d-flex justify-content-between align-items-center small text-muted pt-2 border-top">
+                    <span>
+                        <i class="fa-solid fa-user me-1"></i> Complainant: {{ c.complainant_name }}
+                        {% if c.complainant_contact %} &bull; Contact: {{ c.complainant_contact }}{% endif %}
+                    </span>
+                    {% if c.evidence_file_path %}
+                    <a href="{{ c.evidence_file_path }}" target="_blank" class="text-primary text-decoration-none">
+                        <i class="fa-solid fa-image me-1"></i> View Attached Photo
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card border-0 shadow-sm p-5 text-center bg-white">
+    <i class="fa-solid fa-folder-open text-muted fs-1 mb-3"></i>
+    <h5 class="fw-bold text-dark">No Grievances Found</h5>
+    <p class="text-muted small mb-4">
+        {% if search_ref %}
+        No complaints match reference or contact "{{ search_ref }}". Please check your reference code.
+        {% else %}
+        You haven't submitted any complaints yet, or no complaints match your account contact.
+        {% endif %}
+    </p>
+    <div>
+        <a href="{{ url_for('contractors.new_complaint') }}" class="btn btn-warning text-dark btn-sm px-4 fw-semibold shadow-sm">
+            <i class="fa-solid fa-bullhorn me-1"></i> Report an Issue
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

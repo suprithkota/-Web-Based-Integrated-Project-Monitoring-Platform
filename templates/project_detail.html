@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}{{ project.project_name }} — Project Intelligence{% endblock %}
+{% block title %}{{ project.project_name }} — Project Command Center{% endblock %}
 {% block header_title %}{{ project.project_name }}{% endblock %}
-{% block breadcrumb %}{{ project.project_code }} | {{ project.ministry }} | {{ project.sector }} | {{ project.state }}{% endblock %}
+{% block breadcrumb %}{{ project.project_code }} &bull; {{ project.ministry }} &bull; {{ project.sector }} &bull; {{ project.state }}{% endblock %}
 
 {% block content %}
 <!-- Project Overview Header Card -->
@@ -11,9 +11,9 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
             <div>
                 <div class="small fw-bold text-uppercase text-primary letter-spacing-1 mb-1">
-                    <i class="fa-solid fa-microchip me-1"></i> PROJECT INTELLIGENCE PROFILE
+                    <i class="fa-solid fa-microchip me-1"></i> INTEGRATED INFRASTRUCTURE COMMAND CENTER
                 </div>
-                <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                     <span class="badge bg-dark font-monospace fs-6">{{ project.project_code }}</span>
                     <span class="badge-risk badge-risk-{{ project.risk_level|lower }} fs-6">
                         {% if project.risk_level == 'LOW' %}🟢 LOW RISK
@@ -22,7 +22,7 @@
                         {% else %}🔴 CRITICAL RISK{% endif %}
                     </span>
                     <span class="badge bg-secondary-subtle text-secondary border">{{ project.project_status }}</span>
-                    <span class="badge bg-light text-secondary border"><i class="fa-solid fa-circle-dot text-success me-1"></i> Observed Ground Metrics</span>
+                    <span class="badge bg-light text-secondary border"><i class="fa-solid fa-circle-dot text-success me-1"></i> Live Ground Telemetry</span>
                 </div>
                 <h2 class="fw-bold text-dark mb-1">{{ project.project_name }}</h2>
                 <div class="text-muted small">
@@ -33,14 +33,19 @@
                 </div>
             </div>
             
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+                {% if current_user.role in ['admin', 'officer'] %}
                 <a href="{{ url_for('simulator.index', project_id=project.id) }}" class="btn btn-primary btn-sm px-3 shadow-sm">
-                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Run What-If Simulation
+                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> What-If Simulation
                 </a>
+                {% endif %}
                 {% if current_user.can_access_project(project.id, write=True) %}
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#quickUpdateModal">
                     <i class="fa-solid fa-pen-to-square me-1"></i> Update Status
                 </button>
+                <a href="{{ url_for('engineering.new_inspection') }}?project_id={{ project.id }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-clipboard-check me-1"></i> Log Inspection
+                </a>
                 {% endif %}
                 {% if current_user.is_admin %}
                 <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-outline-dark btn-sm">
@@ -52,752 +57,819 @@
     </div>
 </div>
 
-<!-- Key AI Risk & Health Score Cards -->
-<div class="row g-3 mb-4">
-    <!-- Health Score -->
-    <div class="col-lg-4 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-4 h-100 text-center bg-white">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="small text-muted text-uppercase fw-bold">Overall Project Health Score</span>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Model Inference</span>
-            </div>
-            <div class="d-inline-flex align-items-center justify-content-center mx-auto my-2 rounded-circle border border-4 {% if project.health_score >= 70 %}border-success text-success{% elif project.health_score >= 45 %}border-warning text-warning-emphasis{% else %}border-danger text-danger{% endif %}" style="width: 120px; height: 120px;">
-                <div class="text-center">
-                    <div class="fs-1 fw-bold lh-1">{{ project.health_score|round(0)|int }}</div>
-                    <div class="small text-muted" style="font-size: 0.72rem;">/ 100</div>
-                </div>
-            </div>
-            <div class="small fw-semibold mt-2 {% if project.health_score >= 70 %}text-success{% elif project.health_score >= 45 %}text-warning-emphasis{% else %}text-danger{% endif %}">
-                Overall Risk Score: {{ project.risk_score }}/100
-            </div>
-            <hr class="my-3 text-muted">
-            <!-- Health Breakdown -->
-            <div class="row g-2 text-start small">
-                <div class="col-6">
-                    <span class="text-muted">Schedule Health:</span>
-                    <strong class="float-end">{{ eval_result.health_breakdown.schedule_health }}</strong>
-                </div>
-                <div class="col-6">
-                    <span class="text-muted">Financial Health:</span>
-                    <strong class="float-end">{{ eval_result.health_breakdown.financial_health }}</strong>
-                </div>
-                <div class="col-6">
-                    <span class="text-muted">Physical Progress:</span>
-                    <strong class="float-end">{{ eval_result.health_breakdown.physical_health }}</strong>
-                </div>
-                <div class="col-6">
-                    <span class="text-muted">Milestone Delivery:</span>
-                    <strong class="float-end">{{ eval_result.health_breakdown.milestone_health }}</strong>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delay Risk Gauge -->
-    <div class="col-lg-4 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white d-flex flex-column justify-content-between">
-            <div>
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="small text-muted text-uppercase fw-bold">Schedule Overrun Risk</span>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Model Inference</span>
-                </div>
-                <div class="fs-1 fw-bold {% if project.delay_probability >= 70 %}text-danger{% elif project.delay_probability >= 40 %}text-warning-emphasis{% else %}text-success{% endif %}">
-                    {{ project.delay_probability }}%
-                </div>
-                <p class="small text-muted mb-3">
-                    Estimated probability of significant time overrun breaching baseline completion date.
-                </p>
-            </div>
-            <div>
-                <div class="progress" style="height: 10px;">
-                    <div class="progress-bar {% if project.delay_probability >= 70 %}bg-danger{% elif project.delay_probability >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ project.delay_probability }}%;"></div>
-                </div>
-                <div class="d-flex justify-content-between small text-muted mt-2">
-                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Delay: <strong>{{ project.delay_days }} days</strong></span>
-                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Progress Lag: <strong>{{ project.progress_gap }}%</strong></span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cost Overrun Risk Gauge -->
-    <div class="col-lg-4 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-4 h-100 bg-white d-flex flex-column justify-content-between">
-            <div>
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="small text-muted text-uppercase fw-bold">Cost Overrun Risk</span>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 0.7rem;"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Model Inference</span>
-                </div>
-                <div class="fs-1 fw-bold {% if project.cost_overrun_probability >= 70 %}text-danger{% elif project.cost_overrun_probability >= 40 %}text-warning-emphasis{% else %}text-success{% endif %}">
-                    {{ project.cost_overrun_probability }}%
-                </div>
-                <p class="small text-muted mb-3">
-                    Estimated probability of financial overrun requiring revised administrative sanction.
-                </p>
-            </div>
-            <div>
-                <div class="progress" style="height: 10px;">
-                    <div class="progress-bar {% if project.cost_overrun_probability >= 70 %}bg-danger{% elif project.cost_overrun_probability >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ project.cost_overrun_probability }}%;"></div>
-                </div>
-                <div class="d-flex justify-content-between small text-muted mt-2">
-                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Cost Escalation: <strong>+{{ project.cost_escalation }}%</strong></span>
-                    <span><span class="badge bg-secondary-subtle text-secondary border px-1 me-1" style="font-size: 0.65rem;">Observed</span> Variance: <strong>+{{ project.cost_escalation_amount|inr }}</strong></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ================= PROJECT RISK DNA (8-DIMENSION GROUNDED VISUALIZATION) ================= -->
-<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex align-items-center gap-2">
-            <div class="p-2 bg-primary-subtle text-primary rounded-circle">
-                <i class="fa-solid fa-dna"></i>
-            </div>
-            <div>
-                <h5 class="fw-bold mb-0 text-dark">Project Risk DNA &bull; Multi-Dimensional Diagnostic</h5>
-                <div class="small text-muted">Comprehensive 8-vector risk fingerprint deterministically computed from ground project indicators</div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-secondary-subtle text-secondary border"><i class="fa-solid fa-circle-dot text-primary me-1"></i> Observed Indicator</span>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="fa-solid fa-calculator me-1"></i> Deterministic DNA Engine</span>
-        </div>
+<!-- Master 13-Tab Centralized Project Command Center -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom p-0">
+        <ul class="nav nav-tabs card-header-tabs m-0 px-3 flex-wrap" id="projectDetailsTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active py-3" data-bs-toggle="tab" data-bs-target="#tab-overview">
+                    <i class="fa-solid fa-gauge-high me-1"></i> 1. Overview
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-progress">
+                    <i class="fa-solid fa-chart-line me-1"></i> 2. Progress
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-budget">
+                    <i class="fa-solid fa-indian-rupee-sign me-1"></i> 3. Budget
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-timeline">
+                    <i class="fa-solid fa-calendar-days me-1"></i> 4. Timeline
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-risk">
+                    <i class="fa-solid fa-shield-halved me-1"></i> 5. Risk
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-delays">
+                    <i class="fa-solid fa-business-time text-danger me-1"></i> 6. Delays
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-contractor">
+                    <i class="fa-solid fa-building-user text-info me-1"></i> 7. Contractor
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-materials">
+                    <i class="fa-solid fa-cubes text-success me-1"></i> 8. {% if current_user.role == 'viewer' %}Verified Quality{% else %}Materials & Quality{% endif %}
+                </button>
+            </li>
+            {% if current_user.role in ['admin', 'officer'] %}
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-inspections">
+                    <i class="fa-solid fa-ruler-combined text-primary me-1"></i> 9. Inspections ({{ project.site_inspections|length }})
+                </button>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-documents">
+                    <i class="fa-solid fa-file-shield me-1"></i> 10. Documents ({{ project.documents|length }})
+                </button>
+            </li>
+            {% if current_user.role in ['admin', 'officer'] %}
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-complaints">
+                    <i class="fa-solid fa-bullhorn text-warning me-1"></i> 11. Complaints ({{ project.complaints|length }})
+                </button>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-ai-insights">
+                    <i class="fa-solid fa-brain text-primary me-1"></i> 12. AI Insights
+                </button>
+            </li>
+            {% if current_user.role in ['admin', 'officer'] %}
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-dlp">
+                    <i class="fa-solid fa-road text-warning me-1"></i> 13. DLP
+                </button>
+            </li>
+            {% endif %}
+        </ul>
     </div>
     <div class="card-body p-4">
-        <div class="row g-4 align-items-center">
-            <!-- Radar Chart Column -->
-            <div class="col-lg-5 col-md-6 text-center">
-                <div style="position: relative; height: 320px; width: 100%;">
-                    <canvas id="riskDnaRadarChart"></canvas>
-                </div>
-                <div class="mt-2 small text-muted">
-                    Overall DNA Risk Index: <strong class="text-dark">{{ risk_dna.average_dna_score }}/100</strong> &bull; Highest Stress: <strong class="text-danger">{{ risk_dna.highest_risk.name }} ({{ risk_dna.highest_risk.score }}%)</strong>
-                </div>
-            </div>
+        <div class="tab-content">
 
-            <!-- 8-Vector Breakdown Grid -->
-            <div class="col-lg-7 col-md-6">
-                <div class="row g-3">
-                    {% for dim in risk_dna.dimensions %}
-                    <div class="col-sm-6">
-                        <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-dark small">{{ dim.name }}</span>
-                                <span class="badge bg-{{ dim.color }}-subtle text-{{ dim.color }} border border-{{ dim.color }}-subtle font-monospace" style="font-size: 0.72rem;">
-                                    {{ dim.score }}% &bull; {{ dim.tier }}
-                                </span>
+            <!-- 1. OVERVIEW TAB -->
+            <div class="tab-pane fade show active" id="tab-overview">
+                <!-- Top Key Performance Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light text-center h-100">
+                            <span class="small text-muted text-uppercase fw-bold">Overall Project Health Score</span>
+                            <div class="fs-1 fw-bold my-1 {% if project.health_score >= 70 %}text-success{% elif project.health_score >= 45 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ project.health_score|round(0)|int }}<span class="fs-6 text-muted">/100</span>
                             </div>
-                            <div class="progress my-2" style="height: 6px;">
-                                <div class="progress-bar bg-{{ dim.color }}" style="width: {{ dim.score }}%;"></div>
+                            <small class="text-muted">Calculated Project Health</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light text-center h-100">
+                            <span class="small text-muted text-uppercase fw-bold">Physical Progress</span>
+                            <div class="fs-1 fw-bold text-primary my-1">
+                                {{ project.physical_progress }}%
                             </div>
-                            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
-                                <span class="text-muted text-truncate">{{ dim.detail }}</span>
-                                <span class="badge bg-white text-secondary border px-1" style="font-size: 0.65rem;">Observed</span>
+                            <small class="text-muted">Target: {{ project.planned_progress }}% {% if project.progress_gap > 0 %}<span class="text-danger">(-{{ project.progress_gap }}%)</span>{% endif %}</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light text-center h-100">
+                            <span class="small text-muted text-uppercase fw-bold">Cost Outlay</span>
+                            <div class="fs-1 fw-bold text-dark my-1">
+                                {{ project.approved_cost|inr }}
+                            </div>
+                            <small class="text-muted">Exp: {{ project.expenditure|inr }} ({{ project.budget_utilization }}%)</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light text-center h-100">
+                            <span class="small text-muted text-uppercase fw-bold">Schedule Delay</span>
+                            <div class="fs-1 fw-bold my-1 {% if project.delay_days > 60 %}text-danger{% elif project.delay_days > 0 %}text-warning{% else %}text-success{% endif %}">
+                                {{ project.delay_days }} <span class="fs-6 text-muted">days</span>
+                            </div>
+                            <small class="text-muted">Target: {{ project.revised_completion_date or project.original_completion_date }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Executive Snapshot Details Grid -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-circle-info text-primary me-2"></i>Executive Project Profile</h6>
+                            <table class="table table-sm table-borderless small mb-0">
+                                <tbody>
+                                    <tr><td class="text-muted" style="width: 40%;">Project Code:</td><td class="fw-bold font-monospace">{{ project.project_code }}</td></tr>
+                                    <tr><td class="text-muted">Nodal Ministry:</td><td class="fw-semibold">{{ project.ministry }}</td></tr>
+                                    <tr><td class="text-muted">Department / Division:</td><td>{{ project.department or 'Infrastructure Operations' }}</td></tr>
+                                    <tr><td class="text-muted">Infrastructure Sector:</td><td><span class="badge bg-light text-dark border">{{ project.sector }}</span></td></tr>
+                                    <tr><td class="text-muted">Geographic Jurisdiction:</td><td>{{ project.location or project.state }}</td></tr>
+                                    <tr><td class="text-muted">Executing Agency:</td><td>{{ project.implementing_agency }}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i>Statutory Clearances & Execution Status</h6>
+                            <div class="row g-2 text-center small">
+                                <div class="col-6">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="text-muted" style="font-size: 0.72rem;">Land Acquisition</div>
+                                        <strong class="{% if project.land_acquisition_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.land_acquisition_status }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="text-muted" style="font-size: 0.72rem;">Environmental Clearance</div>
+                                        <strong class="{% if project.environmental_clearance_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.environmental_clearance_status }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="text-muted" style="font-size: 0.72rem;">Utility Shifting</div>
+                                        <strong class="{% if project.utility_shifting_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.utility_shifting_status }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 border rounded bg-light">
+                                        <div class="text-muted" style="font-size: 0.72rem;">Contractor Status</div>
+                                        <strong class="{% if project.contractor_status in ['Delayed', 'Critical'] %}text-danger{% else %}text-success{% endif %}">{{ project.contractor_status }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-3">
+                                <strong>Site Health Telemetry:</strong> {{ project.current_site_status or 'Active continuous field operations under central telemetry surveillance.' }}
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Explainable AI & Root-Cause Analysis (Most Important Feature) -->
-<div class="row g-4 mb-4">
-    <!-- Major Risk Contributors (Bar Breakdown) -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100">
-            <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-magnifying-glass-chart text-primary"></i> Explainable Risk Factors</h3>
-                <span class="badge bg-light text-secondary border">Feature Attribution</span>
+            <!-- 2. PROGRESS TAB -->
+            <div class="tab-pane fade" id="tab-progress">
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-line text-primary me-2"></i>Physical vs Planned Execution</h6>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>Actual Physical Progress</span>
+                                    <span class="text-primary">{{ project.physical_progress }}%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ project.physical_progress }}%;"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>Planned Target Progress</span>
+                                    <span class="text-secondary">{{ project.planned_progress }}%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-secondary" style="width: {{ project.planned_progress }}%;"></div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-light rounded mt-3 small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Execution Progress Lag:</span>
+                                    <strong class="{% if project.progress_gap > 0 %}text-danger{% else %}text-success{% endif %}">{{ project.progress_gap }}%</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Milestones Completed:</span>
+                                    <strong>{{ project.milestones_completed }} of {{ project.milestones_total }} ({{ project.milestones_delayed }} Delayed)</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-timeline text-primary me-2"></i>Execution Trend S-Curve</h6>
+                            <div style="height: 220px; width: 100%;">
+                                <canvas id="projectTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quarterly Progress Reporting Records -->
+                {% if history %}
+                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-history text-secondary me-2"></i>Quarterly Ground Progress Log</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Reporting Date</th>
+                                <th>Physical Progress</th>
+                                <th>Planned Target</th>
+                                <th>Disbursement (₹ Cr)</th>
+                                <th>Delay Days</th>
+                                <th>Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in history %}
+                            <tr>
+                                <td class="small fw-semibold">{{ h.reporting_date.strftime('%d-%b-%Y') }}</td>
+                                <td class="small">{{ h.physical_progress }}%</td>
+                                <td class="small text-muted">{{ h.planned_progress }}%</td>
+                                <td class="small">{{ h.expenditure|inr }}</td>
+                                <td class="small {% if h.delay_days > 30 %}text-danger fw-bold{% endif %}">{{ h.delay_days }} d</td>
+                                <td>
+                                    <span class="badge {% if h.risk_score >= 70 %}bg-danger{% elif h.risk_score >= 45 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ h.risk_score }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
             </div>
-            <div class="panel-body">
-                <p class="small text-muted mb-3">
-                    Decomposition of observed project indicators contributing to the predictive risk score:
-                </p>
 
-                {% for factor, score in eval_result.contributing_factors.items() %}
-                <div class="factor-row">
-                    <div class="factor-header">
-                        <span>{{ factor }}</span>
-                        <span class="{% if score >= 70 %}text-danger fw-bold{% elif score >= 40 %}text-warning-emphasis fw-semibold{% else %}text-muted{% endif %}">
-                            {{ score }}%
+            <!-- 3. BUDGET TAB -->
+            <div class="tab-pane fade" id="tab-budget">
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-indian-rupee-sign text-primary me-2"></i>Financial Allocation & Outlay</h6>
+                            <table class="table table-sm align-middle mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted">Approved Baseline Cost:</td>
+                                        <td class="fw-bold text-end">{{ project.approved_cost|inr }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Revised Anticipated Cost:</td>
+                                        <td class="fw-bold text-end {% if project.cost_escalation > 0 %}text-danger{% endif %}">{{ project.revised_cost|inr }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Cost Escalation Variance:</td>
+                                        <td class="fw-bold text-end {% if project.cost_escalation > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            +{{ project.cost_escalation }}% (+{{ project.cost_escalation_amount|inr }})
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Cumulative Expenditure:</td>
+                                        <td class="fw-bold text-end text-primary">{{ project.expenditure|inr }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Budget Disbursement Rate:</td>
+                                        <td class="fw-bold text-end">{{ project.budget_utilization }}%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-scale-balanced text-primary me-2"></i>Cost Overrun Risk Telemetry</h6>
+                                <div class="fs-1 fw-bold {% if project.cost_overrun_probability >= 70 %}text-danger{% elif project.cost_overrun_probability >= 40 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ project.cost_overrun_probability }}%
+                                </div>
+                                <p class="small text-muted mb-3">
+                                    Predictive risk score of financial overrun requiring revised administrative sanction.
+                                </p>
+                            </div>
+                            <div>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    <div class="progress-bar {% if project.cost_overrun_probability >= 70 %}bg-danger{% elif project.cost_overrun_probability >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ project.cost_overrun_probability }}%;"></div>
+                                </div>
+                                <div class="small text-muted d-flex justify-content-between">
+                                    <span>Financial Health: <strong>{{ eval_result.health_breakdown.financial_health }}</strong></span>
+                                    <span>Variance: <strong>+{{ project.cost_escalation_amount|inr }}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. TIMELINE TAB -->
+            <div class="tab-pane fade" id="tab-timeline">
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-calendar-days text-primary me-2"></i>Schedule & Execution Milestones</h6>
+                            <table class="table table-sm align-middle mb-0">
+                                <tbody>
+                                    <tr><td class="text-muted">Sanction Date:</td><td class="text-end fw-semibold">{{ project.start_date or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Original Targeted Completion:</td><td class="text-end fw-semibold">{{ project.original_completion_date or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Revised Target Completion:</td><td class="text-end fw-bold text-danger">{{ project.revised_completion_date or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Predicted Completion:</td><td class="text-end fw-bold text-primary">{{ project.predicted_completion_date or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Cumulative Schedule Delay:</td><td class="text-end fw-bold {% if project.delay_days > 60 %}text-danger{% else %}text-muted{% endif %}">{{ project.delay_days }} Days</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-flag-checkered text-primary me-2"></i>Critical Path Milestones ({{ project.milestones|length }})</h6>
+                            <div class="list-group list-group-flush small">
+                                {% for m in project.milestones %}
+                                <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold text-dark">{{ m.name }}</div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">Target: {{ m.target_date }} &bull; Rev: {{ m.revised_date }}</div>
+                                    </div>
+                                    <span class="badge {% if m.status == 'Completed' %}bg-success{% elif m.status == 'Delayed' %}bg-danger{% else %}bg-primary{% endif %}">
+                                        {{ m.status }} ({{ m.completion_percentage }}%)
+                                    </span>
+                                </div>
+                                {% else %}
+                                <div class="text-muted small py-2">Standard critical path milestones defined per statutory CPWD / NHAI manuals.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. RISK TAB -->
+            <div class="tab-pane fade" id="tab-risk">
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100 text-center">
+                            <span class="small text-muted text-uppercase fw-bold d-block mb-2">Overall Risk & Health Diagnostic</span>
+                            <div class="d-inline-flex align-items-center justify-content-center mx-auto my-2 rounded-circle border border-4 {% if project.health_score >= 70 %}border-success text-success{% elif project.health_score >= 45 %}border-warning text-warning-emphasis{% else %}border-danger text-danger{% endif %}" style="width: 110px; height: 110px;">
+                                <div class="text-center">
+                                    <div class="fs-2 fw-bold lh-1">{{ project.health_score|round(0)|int }}</div>
+                                    <div class="small text-muted" style="font-size: 0.7rem;">Health Score</div>
+                                </div>
+                            </div>
+                            <div class="fw-bold {% if project.risk_score >= 70 %}text-danger{% elif project.risk_score >= 45 %}text-warning-emphasis{% else %}text-success{% endif %}">
+                                Risk Score: {{ project.risk_score }}/100 ({{ project.risk_level }} RISK)
+                            </div>
+                            <hr class="my-3">
+                            <div class="row g-2 text-start small">
+                                <div class="col-6"><span class="text-muted">Schedule Health:</span> <strong class="float-end">{{ eval_result.health_breakdown.schedule_health }}</strong></div>
+                                <div class="col-6"><span class="text-muted">Financial Health:</span> <strong class="float-end">{{ eval_result.health_breakdown.financial_health }}</strong></div>
+                                <div class="col-6"><span class="text-muted">Physical Health:</span> <strong class="float-end">{{ eval_result.health_breakdown.physical_health }}</strong></div>
+                                <div class="col-6"><span class="text-muted">Milestone Health:</span> <strong class="float-end">{{ eval_result.health_breakdown.milestone_health }}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Active Project Alerts ({{ alerts|length }})</h6>
+                            <div class="list-group list-group-flush small">
+                                {% for a in alerts %}
+                                <div class="list-group-item px-0 py-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="badge {% if a.severity == 'CRITICAL' %}bg-danger{% elif a.severity == 'HIGH' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ a.severity }}
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.72rem;">{{ a.created_at.strftime('%d-%b-%Y') if a.created_at else '' }}</span>
+                                    </div>
+                                    <div class="text-secondary">{{ a.message }}</div>
+                                </div>
+                                {% else %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fa-solid fa-circle-check text-success fs-3 mb-2"></i>
+                                    <div>No active alerts. Project operating within baseline thresholds.</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. DELAYS TAB -->
+            <div class="tab-pane fade" id="tab-delays">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-business-time text-danger me-2"></i>Documented Root-Cause Delay Records</h6>
+                {% if project.delay_records %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Category</th>
+                                <th>Impact Days</th>
+                                <th>Documented Root Cause</th>
+                                <th>Responsible Authority</th>
+                                <th>Corrective Action Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in project.delay_records %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ d.delay_category }}</span></td>
+                                <td class="fw-bold text-danger">+{{ d.affected_days }} d</td>
+                                <td class="small">{{ d.delay_description }}</td>
+                                <td class="small fw-semibold">{{ d.responsible_authority or 'Official Review' }}</td>
+                                <td class="small text-muted">{{ d.corrective_action or 'Action Plan Active' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-circle-check text-success fs-3 mb-2"></i>
+                    <div>No official delay causes recorded. Project is performing according to the scheduled milestone baseline.</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 7. CONTRACTOR TAB -->
+            <div class="tab-pane fade" id="tab-contractor">
+                {% if project.contractor %}
+                <div class="card border rounded-3 p-4 bg-light">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-uppercase small fw-bold text-muted d-block">Executing Construction Entity</span>
+                            <h4 class="fw-bold text-dark mb-1">
+                                <a href="{{ url_for('contractors.detail', contractor_id=project.contractor.id) }}" class="text-dark text-decoration-none">
+                                    {{ project.contractor.name }}
+                                </a>
+                            </h4>
+                            <div class="small text-muted">
+                                <span class="badge bg-white text-dark border font-monospace">{{ project.contractor.contractor_code }}</span> &bull; 
+                                Reg: <span class="font-monospace">{{ project.contractor.registration_number }}</span> &bull; 
+                                License: <span class="font-monospace">{{ project.contractor.contractor_license_number }}</span>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fs-6">
+                            {{ project.contractor.verification_status or 'Verified' }}
                         </span>
                     </div>
-                    <div class="factor-bar">
-                        <div class="factor-progress {% if score >= 70 %}bg-danger{% elif score >= 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ score }}%;"></div>
-                    </div>
-                </div>
-                {% endfor %}
 
-                <!-- Natural Language Explanation Narrative -->
-                <div class="p-3 bg-light rounded-3 border mt-4">
-                    <div class="small fw-bold text-dark text-uppercase mb-1">
-                        <i class="fa-solid fa-comment-dots text-primary me-1"></i> AI Intelligence Narrative:
+                    <div class="row g-3 small mb-3">
+                        <div class="col-md-3"><strong>Company Type:</strong> {{ project.contractor.company_type }}</div>
+                        <div class="col-md-3"><strong>Class:</strong> {{ project.contractor.contractor_class or 'Class-1' }}</div>
+                        <div class="col-md-3"><strong>Headquarters:</strong> {{ project.contractor.headquarters }}</div>
+                        <div class="col-md-3"><strong>Experience:</strong> {{ project.contractor.years_of_experience }} years</div>
                     </div>
-                    <p class="small text-secondary mb-0">
-                        {{ eval_result.explanation }}
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Cautious Root Cause Analysis -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100">
-            <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-stethoscope text-primary"></i> Root-Cause Bottleneck Audit</h3>
-                <span class="badge bg-light text-secondary border">Diagnostic Evidence</span>
-            </div>
-            <div class="panel-body">
-                {% if eval_result.root_causes %}
-                    <div class="list-group list-group-flush">
-                        {% for rc in eval_result.root_causes %}
-                        <div class="list-group-item px-0 py-3 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-semibold text-dark">{{ rc.factor }}</span>
-                                <span class="badge {% if rc.severity == 'CRITICAL' %}bg-danger{% elif rc.severity == 'HIGH' %}bg-orange text-white{% else %}bg-warning text-dark{% endif %}">
-                                    {{ rc.status }}
-                                </span>
-                            </div>
-                            <div class="small text-secondary">
-                                <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> {{ rc.description }}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fa-solid fa-circle-check fs-1 text-success mb-2"></i>
-                        <div>No severe execution bottlenecks detected. Land acquisition, clearances, and contractors are performing within baseline thresholds.</div>
-                    </div>
-                {% endif %}
-
-                <!-- Dependencies Status Strip -->
-                <div class="mt-4 pt-3 border-top">
-                    <div class="small fw-bold text-uppercase text-muted mb-2">Statutory & Resource Clearances</div>
-                    <div class="row g-2 text-center small">
-                        <div class="col-3">
-                            <div class="p-2 border rounded bg-light">
-                                <div class="text-muted" style="font-size: 0.7rem;">Contractor</div>
-                                <strong class="{% if project.contractor_status in ['Delayed', 'Critical'] %}text-danger{% else %}text-success{% endif %}">{{ project.contractor_status }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-3">
-                            <div class="p-2 border rounded bg-light">
-                                <div class="text-muted" style="font-size: 0.7rem;">Land Acq.</div>
-                                <strong class="{% if project.land_acquisition_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.land_acquisition_status }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-3">
-                            <div class="p-2 border rounded bg-light">
-                                <div class="text-muted" style="font-size: 0.7rem;">Env Clearance</div>
-                                <strong class="{% if project.environmental_clearance_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.environmental_clearance_status }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-3">
-                            <div class="p-2 border rounded bg-light">
-                                <div class="text-muted" style="font-size: 0.7rem;">Utilities</div>
-                                <strong class="{% if project.utility_shifting_status in ['Delayed', 'Pending'] %}text-danger{% else %}text-success{% endif %}">{{ project.utility_shifting_status }}</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ================= ADVANCED MULTI-MODEL ML & SHAP EXPLAINABILITY ================= -->
-<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex align-items-center gap-2">
-            <div class="p-2 rounded-circle" style="background-color: #ede9fe; color: #6366f1;">
-                <i class="fa-solid fa-brain"></i>
-            </div>
-            <div>
-                <h5 class="fw-bold mb-0 text-dark">Multi-Model Machine Learning Intelligence & SHAP Attribution</h5>
-                <div class="small text-muted">Comparative inference across 7 models: Random Forest, XGBoost, LightGBM, Logistic Regression, SVM, K-Means, and Isolation Forest</div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary font-monospace"><i class="fa-solid fa-check-double me-1"></i> 7 Models Active</span>
-            <span class="badge bg-light text-secondary border font-monospace"><i class="fa-solid fa-tree me-1"></i> TreeSHAP Engine</span>
-        </div>
-    </div>
-    <div class="card-body p-4">
-        <!-- 1. Regressors Comparative Row -->
-        <div class="row g-3 mb-4">
-            <!-- Random Forest (Primary) -->
-            <div class="col-lg-4 col-md-6">
-                <div class="p-3 border rounded-3 bg-light h-100 position-relative">
-                    <span class="badge bg-primary position-absolute top-0 end-0 m-2 font-monospace" style="font-size: 0.65rem;">Primary Model</span>
-                    <div class="small text-muted text-uppercase fw-bold mb-1">Random Forest Regressor</div>
-                    <div class="d-flex align-items-baseline gap-2">
-                        <span class="fs-2 fw-bold text-dark">{{ eval_result.model_predictions.regressors.random_forest or eval_result.overall_risk_score }}</span>
-                        <span class="small text-muted">/ 100 risk score</span>
-                    </div>
-                    <div class="progress my-2" style="height: 6px;">
-                        <div class="progress-bar bg-primary" style="width: {{ eval_result.model_predictions.regressors.random_forest or eval_result.overall_risk_score }}%;"></div>
-                    </div>
-                    <div class="small text-muted d-flex justify-content-between">
-                        <span>sklearn.ensemble</span>
-                        <span class="text-success fw-semibold"><i class="fa-solid fa-check me-1"></i>Operational</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- XGBoost Regressor -->
-            <div class="col-lg-4 col-md-6">
-                <div class="p-3 border rounded-3 bg-light h-100 position-relative">
-                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle position-absolute top-0 end-0 m-2 font-monospace" style="font-size: 0.65rem;">Gradient Boost</span>
-                    <div class="small text-muted text-uppercase fw-bold mb-1">XGBoost Regressor</div>
-                    <div class="d-flex align-items-baseline gap-2">
-                        <span class="fs-2 fw-bold text-dark">{{ eval_result.model_predictions.regressors.xgboost if eval_result.model_predictions.regressors.xgboost is not none else 'N/A' }}</span>
-                        <span class="small text-muted">/ 100 risk score</span>
-                    </div>
-                    <div class="progress my-2" style="height: 6px;">
-                        <div class="progress-bar bg-info" style="width: {{ eval_result.model_predictions.regressors.xgboost or 0 }}%;"></div>
-                    </div>
-                    <div class="small text-muted d-flex justify-content-between">
-                        <span>xgboost.XGBRegressor</span>
-                        <span class="text-success fw-semibold"><i class="fa-solid fa-check me-1"></i>Operational</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- LightGBM Regressor -->
-            <div class="col-lg-4 col-md-6">
-                <div class="p-3 border rounded-3 bg-light h-100 position-relative">
-                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle position-absolute top-0 end-0 m-2 font-monospace" style="font-size: 0.65rem;">Fast Tree</span>
-                    <div class="small text-muted text-uppercase fw-bold mb-1">LightGBM Regressor</div>
-                    <div class="d-flex align-items-baseline gap-2">
-                        <span class="fs-2 fw-bold text-dark">{{ eval_result.model_predictions.regressors.lightgbm if eval_result.model_predictions.regressors.lightgbm is not none else 'N/A' }}</span>
-                        <span class="small text-muted">/ 100 risk score</span>
-                    </div>
-                    <div class="progress my-2" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: {{ eval_result.model_predictions.regressors.lightgbm or 0 }}%;"></div>
-                    </div>
-                    <div class="small text-muted d-flex justify-content-between">
-                        <span>lightgbm.LGBMRegressor</span>
-                        <span class="text-success fw-semibold"><i class="fa-solid fa-check me-1"></i>Operational</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. Classifiers, Anomaly & Cluster Row -->
-        <div class="row g-3 mb-4">
-            <!-- Logistic Regression -->
-            <div class="col-md-3 col-sm-6">
-                <div class="p-3 border rounded-3 bg-light h-100">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">Logistic Regression</div>
-                    <div class="fw-bold fs-5 text-dark mb-1">
-                        {{ eval_result.model_predictions.classifiers.logistic_regression.predicted_level if eval_result.model_predictions.classifiers.logistic_regression else 'N/A' }}
-                    </div>
-                    <div class="small text-muted">Interpretable linear baseline classifier.</div>
-                </div>
-            </div>
-
-            <!-- Support Vector Machine (SVM) -->
-            <div class="col-md-3 col-sm-6">
-                <div class="p-3 border rounded-3 bg-light h-100">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">Support Vector Machine</div>
-                    <div class="fw-bold fs-5 text-dark mb-1">
-                        {{ eval_result.model_predictions.classifiers.svm.predicted_level if eval_result.model_predictions.classifiers.svm else 'N/A' }}
-                    </div>
-                    <div class="small text-muted">Non-linear RBF kernel boundary classifier.</div>
-                </div>
-            </div>
-
-            <!-- Isolation Forest (Anomaly) -->
-            <div class="col-md-3 col-sm-6">
-                <div class="p-3 border rounded-3 bg-light h-100">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">Isolation Forest</div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        {% if eval_result.anomaly.detected %}
-                        <span class="badge bg-danger fs-6"><i class="fa-solid fa-triangle-exclamation me-1"></i>ANOMALY</span>
-                        {% else %}
-                        <span class="badge bg-success fs-6"><i class="fa-solid fa-circle-check me-1"></i>REGULAR</span>
-                        {% endif %}
-                        <span class="small text-muted">Index: {{ eval_result.anomaly.anomaly_score }}%</span>
-                    </div>
-                    <div class="small text-muted text-truncate" title="{{ eval_result.anomaly.description }}">{{ eval_result.anomaly.description }}</div>
-                </div>
-            </div>
-
-            <!-- K-Means Cluster Archetype -->
-            <div class="col-md-3 col-sm-6">
-                <div class="p-3 border rounded-3 bg-light h-100">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">K-Means Cluster Archetype</div>
-                    <div class="fw-bold fs-6 text-primary mb-1">
-                        Cohort #{{ eval_result.cluster.id }}: {{ eval_result.cluster.archetype }}
-                    </div>
-                    <div class="small text-muted text-truncate" title="{{ eval_result.cluster.description }}">{{ eval_result.cluster.label }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3. SHAP Explainability Feature Attributions -->
-        <div class="p-3 bg-light rounded-3 border">
-            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                <div class="fw-bold text-dark small text-uppercase">
-                    <i class="fa-solid fa-layer-group text-primary me-1"></i> TreeSHAP Shapley Feature Attributions (Local Instance)
-                </div>
-                <div>
-                    <span class="badge bg-white text-secondary border font-monospace">Baseline Expected Value: {{ eval_result.shap_explanation.base_value }} pts</span>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1">{{ eval_result.shap_explanation.method }}</span>
-                </div>
-            </div>
-
-            <p class="small text-secondary mb-3">
-                {{ eval_result.shap_explanation.summary_statement }}
-            </p>
-
-            <div class="row g-2">
-                {% for feat in eval_result.shap_explanation.features %}
-                <div class="col-md-6">
-                    <div class="p-2 border rounded bg-white d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="small fw-semibold text-dark">{{ feat.display_name }}</span>
-                            <span class="text-muted ms-1" style="font-size: 0.72rem;">(Val: {{ feat.raw_value }})</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            {% if feat.shap_value > 0 %}
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace">
-                                +{{ feat.shap_value }} pts (Risk+)
-                            </span>
-                            {% elif feat.shap_value < 0 %}
-                            <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace">
-                                {{ feat.shap_value }} pts (Mitigating)
-                            </span>
-                            {% else %}
-                            <span class="badge bg-secondary-subtle text-secondary border font-monospace">0.0 pts</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Financial & Physical Metrics Grid -->
-<div class="row g-4 mb-4">
-    <!-- Financial Table -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100">
-            <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-indian-rupee-sign text-primary"></i> Financial Progress & Outlay</h3>
-            </div>
-            <div class="panel-body p-0">
-                <table class="gov-table">
-                    <tbody>
-                        <tr>
-                            <td class="text-muted">Approved Baseline Cost</td>
-                            <td class="fw-bold text-end">{{ project.approved_cost|inr }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Revised Anticipated Cost</td>
-                            <td class="fw-bold text-end {% if project.cost_escalation > 0 %}text-danger{% endif %}">{{ project.revised_cost|inr }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Cost Escalation</td>
-                            <td class="fw-bold text-end {% if project.cost_escalation > 0 %}text-danger{% else %}text-success{% endif %}">
-                                +{{ project.cost_escalation }}% (+{{ project.cost_escalation_amount|inr }})
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Cumulative Expenditure</td>
-                            <td class="fw-bold text-end text-primary">{{ project.expenditure|inr }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Budget Utilization</td>
-                            <td class="fw-bold text-end">{{ project.budget_utilization }}%</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Schedule & Physical Progress -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100">
-            <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-calendar-days text-primary"></i> Schedule & Execution Timelines</h3>
-            </div>
-            <div class="panel-body p-0">
-                <table class="gov-table">
-                    <tbody>
-                        <tr>
-                            <td class="text-muted">Physical Progress (Actual vs Target)</td>
-                            <td class="fw-bold text-end">
-                                {{ project.physical_progress }}% / {{ project.planned_progress }}%
-                                {% if project.progress_gap > 0 %}
-                                <span class="text-danger small ms-1">(-{{ project.progress_gap }}%)</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Project Sanction Date</td>
-                            <td class="text-end text-dark">{{ project.start_date or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Original Targeted Completion</td>
-                            <td class="text-end text-dark">{{ project.original_completion_date or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Revised Completion Date</td>
-                            <td class="text-end fw-semibold text-danger">{{ project.revised_completion_date or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Predicted Completion Date</td>
-                            <td class="text-end fw-semibold text-primary">{{ project.predicted_completion_date or 'N/A' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Cumulative Schedule Delay</td>
-                            <td class="text-end fw-bold {% if project.delay_days > 60 %}text-danger{% else %}text-muted{% endif %}">{{ project.delay_days }} Days</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ================= CONTRACTOR INTELLIGENCE, MATERIALS & QUALITY ASSURANCE ================= -->
-<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex align-items-center gap-2">
-            <div class="p-2 rounded-circle" style="background-color: #e0f2fe; color: #0284c7;">
-                <i class="fa-solid fa-building-shield fs-5"></i>
-            </div>
-            <div>
-                <h5 class="fw-bold mb-0 text-dark">Contractor Intelligence, Materials & Laboratory Testing</h5>
-                <div class="small text-muted">Statutory contractor dossier, BIS batch tests (IS 1786 / 516 / 269), documented delay causes & DLP warranty</div>
-            </div>
-        </div>
-        <div class="d-flex gap-2 align-items-center">
-            <span class="badge bg-light text-dark border"><i class="fa-solid fa-database text-primary me-1"></i> Source: {{ project.data_source or 'Official Portal' }}</span>
-            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-check me-1"></i> {{ project.verification_status or 'Verified' }}</span>
-            {% if project.sync_timestamp %}
-            <span class="small text-muted font-monospace"><i class="fa-solid fa-rotate me-1"></i> Synced: {{ project.sync_timestamp.strftime('%d-%b-%Y %H:%M') }}</span>
-            {% endif %}
-        </div>
-    </div>
-    <div class="card-body p-4">
-        <!-- Executing Contractor Profile Card -->
-        <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-                <div class="p-3 border rounded bg-light h-100">
-                    <span class="text-uppercase small fw-bold text-muted d-block mb-1">Executing Contractor / Construction Agency</span>
-                    {% if project.contractor %}
-                    <h5 class="fw-bold text-dark mb-1">
-                        <a href="{{ url_for('contractors.detail', contractor_id=project.contractor.id) }}" class="text-decoration-none text-dark">
-                            {{ project.contractor.name }}
-                        </a>
-                    </h5>
-                    <div class="small text-muted mb-2">
-                        <span class="badge bg-light text-dark border font-monospace">{{ project.contractor.contractor_code }}</span> &bull; 
-                        Reg: <span class="font-monospace">{{ project.contractor.registration_number }}</span> &bull; 
-                        License: <span class="font-monospace">{{ project.contractor.contractor_license_number }}</span>
-                    </div>
-                    <div class="small text-muted">
-                        <div><strong>Company Type:</strong> {{ project.contractor.company_type }} &bull; Class: {{ project.contractor.contractor_class or 'Class-1' }}</div>
-                        <div><strong>Headquarters:</strong> {{ project.contractor.headquarters }} &bull; Experience: {{ project.contractor.years_of_experience }} years</div>
-                    </div>
-                    <div class="mt-3">
+                    <div class="pt-3 border-top d-flex gap-2">
                         <a href="{{ url_for('contractors.detail', contractor_id=project.contractor.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="fa-solid fa-id-card me-1"></i> View Full 10-Tab Contractor Dossier
                         </a>
                     </div>
-                    {% else %}
-                    <div class="text-muted small py-2">No commercial contractor linked. Direct departmental execution.</div>
-                    {% endif %}
                 </div>
-            </div>
-
-            <!-- Operational & Quality Summary -->
-            <div class="col-lg-6">
-                <div class="p-3 border rounded bg-light h-100">
-                    <span class="text-uppercase small fw-bold text-muted d-block mb-1">Quality Assurance & Post-Construction (DLP)</span>
-                    <div class="row g-2 mt-1">
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="small text-muted">Material Batches:</div>
-                                <div class="fw-bold text-dark">{{ project.materials|length }} Batches</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="small text-muted">Delay Incidents:</div>
-                                <div class="fw-bold text-danger">{{ project.delay_records|length }} Root Causes</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="small text-muted">Site Inspections:</div>
-                                <div class="fw-bold text-primary">{{ project.site_inspections|length }} Recorded</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="small text-muted">Public Grievances:</div>
-                                <div class="fw-bold text-warning">{{ project.complaints|length }} Filed</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="small text-muted mt-2">
-                        <strong>Current Site Status:</strong> {{ project.current_site_status or 'Active operations under official monitoring' }}
-                    </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-building-columns fs-1 mb-2"></i>
+                    <div>Direct departmental execution. No commercial private contractor linked.</div>
                 </div>
+                {% endif %}
             </div>
-        </div>
 
-        <!-- Materials Used & BIS Laboratory Tests -->
-        {% if project.materials %}
-        <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-cubes text-primary me-2"></i>Materials Used & BIS Quality Certification</h6>
-        <div class="table-responsive mb-4">
-            <table class="table table-sm table-hover align-middle mb-0">
-                <thead class="table-light small text-uppercase">
-                    <tr>
-                        <th>Material</th>
-                        <th>Brand / Manufacturer</th>
-                        <th>Batch Number</th>
-                        <th>Quantity</th>
-                        <th>Approval</th>
-                        <th>Certification</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for m in project.materials %}
-                    <tr>
-                        <td class="fw-semibold small">{{ m.material_name }}</td>
-                        <td class="small">{{ m.brand_manufacturer }}</td>
-                        <td class="small font-monospace">{{ m.batch_number }}</td>
-                        <td class="small">{{ m.quantity_procured }} {{ m.unit }}</td>
-                        <td>
-                            <span class="badge {% if m.approval_status == 'Approved' %}bg-success{% elif m.approval_status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                                {{ m.approval_status }}
-                            </span>
-                        </td>
-                        <td class="small text-muted">{{ m.quality_certification_status or 'BIS Standard' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-
-        <!-- Delay Cause Records -->
-        {% if project.delay_records %}
-        <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Official Project Delay Cause Records</h6>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-                <thead class="table-light small text-uppercase">
-                    <tr>
-                        <th>Category</th>
-                        <th>Days</th>
-                        <th>Documented Root Cause</th>
-                        <th>Responsible Authority</th>
-                        <th>Corrective Action Plan</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in project.delay_records %}
-                    <tr>
-                        <td><span class="badge bg-secondary">{{ d.delay_category }}</span></td>
-                        <td class="fw-bold text-danger">+{{ d.affected_days }} d</td>
-                        <td class="small">{{ d.delay_description }}</td>
-                        <td class="small fw-semibold">{{ d.responsible_authority or 'Official Review' }}</td>
-                        <td class="small text-muted">{{ d.corrective_action or 'Action Plan Active' }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Milestones Timeline & Recommended Interventions -->
-<div class="row g-4 mb-4">
-    <!-- Milestone Timeline -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100">
-            <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-flag-checkered text-primary"></i> Critical Path Milestones</h3>
-                <span class="small text-muted">{{ project.milestones_completed }}/{{ project.milestones_total }} Completed ({{ project.milestones_delayed }} Delayed)</span>
+            <!-- 8. MATERIALS & QUALITY TAB -->
+            <div class="tab-pane fade" id="tab-materials">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-cubes text-success me-2"></i>Procured Materials & BIS Quality Certification (IS 1786 / 516 / 269)</h6>
+                {% if project.materials %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Material Name</th>
+                                <th>Brand / Manufacturer</th>
+                                <th>Batch Number</th>
+                                <th>Quantity Procured</th>
+                                <th>Approval Status</th>
+                                <th>BIS Certification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in project.materials %}
+                            <tr>
+                                <td class="fw-semibold small">{{ m.material_name }}</td>
+                                <td class="small">{{ m.brand_manufacturer }}</td>
+                                <td class="small font-monospace">{{ m.batch_number }}</td>
+                                <td class="small">{{ m.quantity_procured }} {{ m.unit }}</td>
+                                <td>
+                                    <span class="badge {% if m.approval_status == 'Approved' %}bg-success{% elif m.approval_status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ m.approval_status }}
+                                    </span>
+                                </td>
+                                <td class="small text-muted">{{ m.quality_certification_status or 'BIS Standard' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-vial-circle-check text-success fs-3 mb-2"></i>
+                    <div>All batch materials comply with Bureau of Indian Standards (BIS) specifications.</div>
+                </div>
+                {% endif %}
             </div>
-            <div class="panel-body">
-                <div class="milestone-timeline">
-                    {% for m in project.milestones %}
-                    <div class="timeline-item {% if m.status == 'Completed' %}completed{% elif m.status == 'Delayed' %}delayed{% else %}in-progress{% endif %}">
-                        <div class="timeline-marker">
-                            <i class="fa-solid {% if m.status == 'Completed' %}fa-check{% elif m.status == 'Delayed' %}fa-exclamation{% else %}fa-spinner{% endif %}"></i>
+
+            <!-- 9. INSPECTIONS TAB (Officer & Admin) -->
+            {% if current_user.role in ['admin', 'officer'] %}
+            <div class="tab-pane fade" id="tab-inspections">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-ruler-combined text-primary me-2"></i>Logged Site Inspection Reports & Measurements</h6>
+                    <a href="{{ url_for('engineering.new_inspection') }}?project_id={{ project.id }}" class="btn btn-sm btn-primary">
+                        <i class="fa-solid fa-plus me-1"></i> Log New Inspection
+                    </a>
+                </div>
+
+                {% if project.site_inspections %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Stage Inspected</th>
+                                <th>Observed Progress</th>
+                                <th>Inspecting Officer</th>
+                                <th>Date</th>
+                                <th>EE Verification Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in project.site_inspections %}
+                            <tr>
+                                <td class="small fw-semibold">{{ i.construction_stage }}</td>
+                                <td><span class="badge bg-primary-subtle text-primary border font-monospace">{{ i.observed_physical_progress }}%</span></td>
+                                <td class="small">{{ i.inspecting_officer_name }}</td>
+                                <td class="small text-muted">{{ i.inspection_date.strftime('%d-%b-%Y') if i.inspection_date else '' }}</td>
+                                <td>
+                                    {% if i.executive_engineer_verified %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Certified by EE</span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pending EE Review</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('engineering.inspection_detail', inspection_id=i.id) }}" class="btn btn-sm btn-outline-primary">
+                                        View Report
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-clipboard-check fs-2 text-muted mb-2"></i>
+                    <div>No site inspections logged yet for this project.</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- 10. DOCUMENTS TAB -->
+            <div class="tab-pane fade" id="tab-documents">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-file-shield text-info me-2"></i>Statutory Documents & Inspection Evidences</h6>
+                {% if project.documents %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Upload Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in project.documents %}
+                            <tr>
+                                <td class="small fw-semibold">{{ d.title }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ d.document_type }}</span></td>
+                                <td class="small text-muted">{{ d.upload_date.strftime('%d-%b-%Y') if d.upload_date else '' }}</td>
+                                <td><span class="badge bg-success-subtle text-success border border-success-subtle">Verified</span></td>
+                                <td>
+                                    <a href="{{ d.file_path }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-folder-open fs-2 mb-2"></i>
+                    <div>Official technical clearance records, EIA certificates, and sanction orders on record in central repository.</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 11. COMPLAINTS TAB (Officer & Admin) -->
+            {% if current_user.role in ['admin', 'officer'] %}
+            <div class="tab-pane fade" id="tab-complaints">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-bullhorn text-warning me-2"></i>Citizen Grievances Filed on this Project</h6>
+                {% if project.complaints %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Reference Code</th>
+                                <th>Category</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Date Filed</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in project.complaints %}
+                            <tr>
+                                <td class="small font-monospace fw-bold">{{ c.complaint_code }}</td>
+                                <td class="small">{{ c.category }}</td>
+                                <td class="small">{{ c.location }}</td>
+                                <td>
+                                    <span class="badge {% if c.status == 'Resolved' %}bg-success{% elif c.status == 'Action Initiated' or c.status == 'In Review' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                        {{ c.status }}
+                                    </span>
+                                </td>
+                                <td class="small text-muted">{{ c.created_at.strftime('%d-%b-%Y') if c.created_at else '' }}</td>
+                                <td>
+                                    <a href="{{ url_for('contractors.complaint_detail', complaint_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                                        Triage Grievance
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-check-circle text-success fs-2 mb-2"></i>
+                    <div>No citizen grievances registered against this project.</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- 12. AI INSIGHTS TAB -->
+            <div class="tab-pane fade" id="tab-ai-insights">
+                <!-- Project Risk DNA -->
+                <div class="card border rounded-3 p-3 bg-light mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-dna text-primary me-2"></i>8-Vector Project Risk DNA Diagnostic</h6>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Deterministic Engine</span>
+                    </div>
+                    <div class="row g-4 align-items-center">
+                        <div class="col-lg-5 text-center">
+                            <div style="position: relative; height: 280px; width: 100%;">
+                                <canvas id="riskDnaRadarChart"></canvas>
+                            </div>
+                            <div class="small text-muted mt-2">
+                                Average DNA Score: <strong>{{ risk_dna.average_dna_score }}/100</strong>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="fw-bold mb-1 text-dark">{{ m.name }}</h6>
-                                <div class="small text-muted">
-                                    Target: {{ m.target_date }} &bull; Revised: {{ m.revised_date }}
+                        <div class="col-lg-7">
+                            <div class="row g-2">
+                                {% for dim in risk_dna.dimensions %}
+                                <div class="col-sm-6">
+                                    <div class="p-2 border rounded bg-white">
+                                        <div class="d-flex justify-content-between small">
+                                            <span class="fw-semibold text-dark">{{ dim.name }}</span>
+                                            <span class="badge bg-{{ dim.color }}-subtle text-{{ dim.color }}">{{ dim.score }}%</span>
+                                        </div>
+                                        <div class="progress my-1" style="height: 5px;">
+                                            <div class="progress-bar bg-{{ dim.color }}" style="width: {{ dim.score }}%;"></div>
+                                        </div>
+                                        <span class="text-muted" style="font-size: 0.7rem;">{{ dim.detail }}</span>
+                                    </div>
                                 </div>
-                                <div class="small text-muted">Dependencies: {{ m.dependencies }}</div>
+                                {% endfor %}
                             </div>
-                            <span class="badge {% if m.status == 'Completed' %}bg-success{% elif m.status == 'Delayed' %}bg-danger{% else %}bg-primary{% endif %}">
-                                {{ m.status }}
-                            </span>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Targeted Intervention Recommendations -->
-    <div class="col-lg-6">
-        <div class="dashboard-panel h-100">
-            <div class="panel-header">
-                <h3 class="panel-title"><i class="fa-solid fa-lightbulb text-warning"></i> Recommended Interventions</h3>
-                <span class="badge bg-light text-secondary border">Action Items</span>
-            </div>
-            <div class="panel-body">
-                <div class="list-group list-group-flush">
+                <!-- Multi-Model Machine Learning Inference (7 Models) -->
+                <div class="card border rounded-3 p-3 bg-light mb-4">
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-brain text-primary me-2"></i>Multi-Model Machine Learning Comparison & SHAP Attributions</h6>
+                    <div class="row g-2 mb-3 text-center small">
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">Random Forest (Primary)</div>
+                                <div class="fs-4 fw-bold text-primary">{{ eval_result.model_predictions.regressors.random_forest or eval_result.overall_risk_score }}/100</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">XGBoost Regressor</div>
+                                <div class="fs-4 fw-bold text-info">{{ eval_result.model_predictions.regressors.xgboost or eval_result.overall_risk_score }}/100</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-white">
+                                <div class="text-muted" style="font-size: 0.72rem;">LightGBM Regressor</div>
+                                <div class="fs-4 fw-bold text-success">{{ eval_result.model_predictions.regressors.lightgbm or eval_result.overall_risk_score }}/100</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TreeSHAP Attribution & Explainable Risk Factors -->
+                    <div class="p-3 bg-white rounded border small">
+                        <div class="fw-bold text-dark mb-1"><i class="fa-solid fa-layer-group text-primary me-1"></i> Explainable Risk Factors & Local TreeSHAP Attributions:</div>
+                        <p class="text-secondary mb-2">{{ eval_result.shap_explanation.summary_statement }}</p>
+                        <div class="row g-2">
+                            {% for feat in eval_result.shap_explanation.features[:4] %}
+                            <div class="col-md-6">
+                                <div class="p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                                    <span>{{ feat.display_name }} ({{ feat.raw_value }})</span>
+                                    <span class="badge {% if feat.shap_value > 0 %}bg-danger-subtle text-danger{% else %}bg-success-subtle text-success{% endif %}">
+                                        {{ '+' if feat.shap_value > 0 else '' }}{{ feat.shap_value }} pts
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prescriptive AI Recommendations -->
+                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Prescriptive AI Recommendations</h6>
+                <div class="row g-3">
                     {% for r in recommendations %}
-                    <div class="list-group-item px-0 py-3 border-bottom">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="fw-bold text-dark"><i class="fa-solid {{ r.icon }} text-primary me-2"></i>{{ r.action }}</span>
-                            <span class="badge {% if r.priority == 'CRITICAL' %}bg-danger{% elif r.priority == 'HIGH' %}bg-orange text-white{% elif r.priority == 'MEDIUM' %}bg-warning text-dark{% else %}bg-info text-white{% endif %}">
-                                {{ r.priority }}
-                            </span>
+                    <div class="col-md-6">
+                        <div class="card border rounded-3 p-3 bg-light h-100">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="badge {% if r.priority == 'CRITICAL' %}bg-danger{% elif r.priority == 'HIGH' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                                    {{ r.priority }}
+                                </span>
+                                <span class="badge bg-white text-secondary border small">{{ r.category }}</span>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">{{ r.action }}</h6>
+                            <p class="small text-secondary mb-0">{{ r.summary_statement }}</p>
                         </div>
-                        <p class="small text-secondary mb-0">
-                            {{ r.detail }}
-                        </p>
                     </div>
                     {% endfor %}
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Historical Risk Trend Chart -->
-<div class="dashboard-panel mb-4">
-    <div class="panel-header">
-        <h3 class="panel-title"><i class="fa-solid fa-chart-line text-primary"></i> Multi-Period Project Risk & Execution Trend</h3>
-        <span class="badge bg-light text-secondary border">Quarterly Tracking</span>
-    </div>
-    <div class="panel-body">
-        <div style="height: 280px; width: 100%;">
-            <canvas id="projectTrendChart"></canvas>
+            <!-- 13. DLP TAB (Officer & Admin) -->
+            {% if current_user.role in ['admin', 'officer'] %}
+            <div class="tab-pane fade" id="tab-dlp">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-road text-warning me-2"></i>Post-Construction Defect Liability Period (DLP) Audits</h6>
+                {% if project.post_construction_records %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Inspection Agency</th>
+                                <th>DLP Duration</th>
+                                <th>Warranty Expiration</th>
+                                <th>Quality Observation</th>
+                                <th>Rectification Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in project.post_construction_records %}
+                            <tr>
+                                <td class="small fw-semibold">{{ d.inspection_agency or 'Field Quality Wing' }}</td>
+                                <td class="small">{{ d.dlp_duration_months or 36 }} Months</td>
+                                <td class="small fw-bold text-danger">{{ d.dlp_end_date or 'Active' }}</td>
+                                <td><span class="badge bg-secondary">{{ d.quality_status }}</span></td>
+                                <td><span class="badge bg-success-subtle text-success border">{{ d.rectification_status or 'Active Warranty' }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-shield-halved fs-2 mb-2 text-muted"></i>
+                    <div>Project is currently under active execution. Defect Liability Period (DLP) begins upon formal commissioning.</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </div>
@@ -854,7 +926,9 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const historyData = [

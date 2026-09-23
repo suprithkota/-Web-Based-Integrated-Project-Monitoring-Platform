@@ -1,0 +1,604 @@
+{% extends "base.html" %}
+
+{% block title %}Risk & Intelligence Command Center — Web-Based Integrated Project-Monitoring Platform{% endblock %}
+{% block header_title %}Risk & Intelligence Command Center{% endblock %}
+{% block breadcrumb %}Early Warnings, Delay Root Causes, Cost Overruns & What-If Stress Testing{% endblock %}
+
+{% block content %}
+<!-- Header Notice -->
+<div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4" style="background: rgba(30, 41, 59, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-triangle-exclamation text-warning fs-3"></i>
+        <div>
+            <div class="fw-bold">National Infrastructure Predictive Risk & Intelligence Hub</div>
+            <small class="text-muted">
+                Multi-model machine learning surveillance, early warning alert triage, root-cause diagnostic telemetry, and counterfactual scenario stress testing.
+            </small>
+        </div>
+    </div>
+    {% if current_user.is_officer %}
+    <div>
+        <form method="POST" action="{{ url_for('alerts.refresh_alerts') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary btn-sm shadow-sm">
+                <i class="fa-solid fa-radar me-1"></i> Scan & Refresh Early Warnings
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Alert Severity Ribbon -->
+<div class="row g-3 mb-4">
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-muted text-uppercase fw-bold">Active Alerts</div>
+            <div class="fs-3 fw-bold text-dark">{{ counts.active }}</div>
+            <div class="small text-muted">Awaiting triage</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white border-start border-danger border-4">
+            <div class="small text-danger text-uppercase fw-bold">Critical Severity</div>
+            <div class="fs-3 fw-bold text-danger">{{ counts.critical }}</div>
+            <div class="small text-muted">Immediate action required</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white border-start border-warning border-4">
+            <div class="small text-warning-emphasis text-uppercase fw-bold">High Severity</div>
+            <div class="fs-3 fw-bold text-warning-emphasis">{{ counts.high }}</div>
+            <div class="small text-muted">Elevated overrun risk</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-secondary text-uppercase fw-bold">Critical Projects</div>
+            <div class="fs-3 fw-bold text-danger">{{ critical_projects|length }}</div>
+            <div class="small text-muted">Red-flagged assets</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card border-0 shadow-sm p-3 bg-white">
+            <div class="small text-success text-uppercase fw-bold">Resolved Alerts</div>
+            <div class="fs-3 fw-bold text-success">{{ counts.resolved }}</div>
+            <div class="small text-muted">Interventions actioned</div>
+        </div>
+    </div>
+</div>
+
+<!-- 8-Tab Master Risk & Intelligence Hub -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom p-0">
+        <ul class="nav nav-tabs card-header-tabs m-0 px-3 flex-wrap" id="riskHubTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active py-3" data-bs-toggle="tab" data-bs-target="#tab-early-warnings">
+                    <i class="fa-solid fa-bell me-1"></i> 1. Early Warnings ({{ alerts|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-critical-risks">
+                    <i class="fa-solid fa-circle-radiation text-danger me-1"></i> 2. Critical Risks ({{ critical_projects|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-delayed-projects">
+                    <i class="fa-solid fa-business-time text-danger me-1"></i> 3. Delayed Projects ({{ delayed_projects|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-cost-overruns">
+                    <i class="fa-solid fa-arrow-trend-up text-danger me-1"></i> 4. Cost Overruns ({{ cost_overrun_projects|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-schedule-risks">
+                    <i class="fa-solid fa-calendar-xmark text-warning me-1"></i> 5. Schedule Risks
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-delay-causes">
+                    <i class="fa-solid fa-stethoscope text-primary me-1"></i> 6. Delay Root Causes
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-ai-recommendations">
+                    <i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i> 7. AI Recommendations
+                </button>
+            </li>
+            {% if current_user.role in ['admin', 'officer'] %}
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-simulator">
+                    <i class="fa-solid fa-sliders text-success me-1"></i> 8. What-If Simulator
+                </button>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    <div class="card-body p-4">
+        <div class="tab-content">
+
+            <!-- 1. EARLY WARNINGS TAB -->
+            <div class="tab-pane fade show active" id="tab-early-warnings">
+                <div class="row g-3">
+                    {% for a in alerts %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-light">
+                            <div class="card-body p-3">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge {% if a.severity == 'CRITICAL' %}bg-danger{% elif a.severity == 'HIGH' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                                {{ a.severity }}
+                                            </span>
+                                            <span class="badge bg-white text-secondary border font-monospace">{{ a.alert_type }}</span>
+                                            <span class="badge {% if a.status == 'Resolved' %}bg-success{% elif a.status == 'Under Review' %}bg-primary{% else %}bg-dark{% endif %}">
+                                                {{ a.status }}
+                                            </span>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-1">
+                                            <a href="{{ url_for('projects.detail', project_id=a.project.id) }}" class="text-dark text-decoration-none">
+                                                {{ a.project.project_name }} ({{ a.project.project_code }})
+                                            </a>
+                                        </h6>
+                                        <div class="small text-muted">
+                                            {{ a.project.ministry }} &bull; {{ a.project.state }} &bull; Detected: {{ a.created_at.strftime('%d-%b-%Y %H:%M') if a.created_at else 'Recent' }}
+                                        </div>
+                                    </div>
+
+                                    {% if current_user.is_officer %}
+                                    <div class="d-flex gap-2">
+                                        {% if a.status != 'Resolved' %}
+                                        <form method="POST" action="{{ url_for('alerts.update_status', alert_id=a.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="status" value="Resolved">
+                                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                                <i class="fa-solid fa-check me-1"></i> Resolve
+                                            </button>
+                                        </form>
+                                        {% if a.status == 'Open' %}
+                                        <form method="POST" action="{{ url_for('alerts.update_status', alert_id=a.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="status" value="Under Review">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                <i class="fa-solid fa-magnifying-glass me-1"></i> Triage
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <p class="small text-secondary mb-0 bg-white p-3 rounded border">
+                                    {{ a.message }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-circle-check text-success fs-1 mb-2"></i>
+                        <div>No early warning alerts matching current criteria. All monitored projects operating within tolerance limits.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 2. CRITICAL RISKS TAB -->
+            <div class="tab-pane fade" id="tab-critical-risks">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project Name & Code</th>
+                                <th>Ministry & Sector</th>
+                                <th>Risk Score</th>
+                                <th>Delay Days</th>
+                                <th>Cost Escalation</th>
+                                <th>Executing Contractor</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in critical_projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ p.project_name }}
+                                    </a>
+                                    <div class="small text-muted font-monospace">{{ p.project_code }}</div>
+                                </td>
+                                <td class="small">{{ p.ministry }} &bull; {{ p.sector }}</td>
+                                <td>
+                                    <span class="badge bg-danger fs-6">{{ p.risk_score }}/100</span>
+                                </td>
+                                <td class="fw-bold text-danger">{{ p.delay_days }} Days</td>
+                                <td class="fw-semibold {% if p.cost_escalation > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    +{{ p.cost_escalation }}% (+{{ p.cost_escalation_amount | inr }})
+                                </td>
+                                <td class="small">{{ p.contractor.name if p.contractor else 'Departmental' }}</td>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Intervene
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No projects currently classified under Critical Risk.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. DELAYED PROJECTS TAB -->
+            <div class="tab-pane fade" id="tab-delayed-projects">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project</th>
+                                <th>Delay (Days)</th>
+                                <th>Progress Gap</th>
+                                <th>Original Completion</th>
+                                <th>Revised Target</th>
+                                <th>Contractor Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in delayed_projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ p.project_name }}
+                                    </a>
+                                    <div class="small text-muted">{{ p.state }} &bull; {{ p.sector }}</div>
+                                </td>
+                                <td class="fw-bold text-danger fs-6">+{{ p.delay_days }} Days</td>
+                                <td>
+                                    <span class="badge bg-warning text-dark">-{{ p.progress_gap }}% lag</span>
+                                </td>
+                                <td class="small text-muted">{{ p.original_completion_date or 'N/A' }}</td>
+                                <td class="small fw-semibold text-danger">{{ p.revised_completion_date or 'N/A' }}</td>
+                                <td><span class="badge {% if p.contractor_status in ['Delayed', 'Critical'] %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ p.contractor_status }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. COST OVERRUNS TAB -->
+            <div class="tab-pane fade" id="tab-cost-overruns">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project</th>
+                                <th>Approved Baseline</th>
+                                <th>Revised Anticipated</th>
+                                <th>Cost Escalation Amount</th>
+                                <th>Escalation %</th>
+                                <th>Disbursement</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in cost_overrun_projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ p.project_name }}
+                                    </a>
+                                    <div class="small text-muted font-monospace">{{ p.project_code }}</div>
+                                </td>
+                                <td class="small text-muted">{{ p.approved_cost | inr }}</td>
+                                <td class="fw-bold text-dark">{{ p.revised_cost | inr }}</td>
+                                <td class="fw-bold text-danger">+{{ p.cost_escalation_amount | inr }}</td>
+                                <td><span class="badge bg-danger fs-6">+{{ p.cost_escalation }}%</span></td>
+                                <td class="small">{{ p.expenditure | inr }} ({{ p.budget_utilization }}%)</td>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. SCHEDULE RISKS TAB -->
+            <div class="tab-pane fade" id="tab-schedule-risks">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project</th>
+                                <th>Physical Progress (Actual / Plan)</th>
+                                <th>Milestones Completed</th>
+                                <th>Milestones Delayed</th>
+                                <th>Land Acq Status</th>
+                                <th>Env Clearance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in schedule_risk_projects %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=p.id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ p.project_name }}
+                                    </a>
+                                    <div class="small text-muted">{{ p.ministry }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px; width: 70px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ p.physical_progress }}%;"></div>
+                                        </div>
+                                        <span class="small font-monospace">{{ p.physical_progress }}% / {{ p.planned_progress }}%</span>
+                                    </div>
+                                </td>
+                                <td class="small">{{ p.milestones_completed }} / {{ p.milestones_total }}</td>
+                                <td class="fw-bold text-danger">{{ p.milestones_delayed }} Delayed</td>
+                                <td><span class="badge {% if p.land_acquisition_status in ['Delayed', 'Pending'] %}bg-danger{% else %}bg-success{% endif %}">{{ p.land_acquisition_status }}</span></td>
+                                <td><span class="badge {% if p.environmental_clearance_status in ['Delayed', 'Pending'] %}bg-danger{% else %}bg-success{% endif %}">{{ p.environmental_clearance_status }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 6. DELAY ROOT CAUSES TAB -->
+            <div class="tab-pane fade" id="tab-delay-causes">
+                <!-- Delay Categories Summary Strip -->
+                <div class="row g-3 mb-4">
+                    {% for cat, data in delay_category_stats.items() %}
+                    <div class="col-md-3 col-6">
+                        <div class="card border rounded p-3 bg-light h-100">
+                            <span class="text-muted small fw-semibold text-truncate">{{ cat }}</span>
+                            <div class="fs-4 fw-bold text-danger mt-1">{{ data.count }} Records</div>
+                            <small class="text-muted">{{ data.total_days }} Total Impact Days</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Category</th>
+                                <th>Impact Days</th>
+                                <th>Documented Root Cause</th>
+                                <th>Linked Project</th>
+                                <th>Responsible Authority</th>
+                                <th>Corrective Action Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in delay_records %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ d.delay_category }}</span></td>
+                                <td class="fw-bold text-danger">+{{ d.affected_days }} d</td>
+                                <td class="small">{{ d.delay_description }}</td>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=d.project.id) }}" class="fw-semibold text-dark text-decoration-none small">
+                                        {{ d.project.project_code if d.project else 'PRJ' }}
+                                    </a>
+                                </td>
+                                <td class="small">{{ d.responsible_authority or 'Official Review' }}</td>
+                                <td class="small text-muted">{{ d.corrective_action or 'Action Plan Active' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 7. AI RECOMMENDATIONS TAB -->
+            <div class="tab-pane fade" id="tab-ai-recommendations">
+                <div class="row g-3">
+                    {% for r in recommendations %}
+                    <div class="col-lg-6">
+                        <div class="card border rounded-3 p-3 h-100 bg-light">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge {% if r.priority == 'CRITICAL' %}bg-danger{% elif r.priority == 'HIGH' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+                                    {{ r.priority }} PRIORITY
+                                </span>
+                                <span class="badge bg-white text-secondary border small">{{ r.category }}</span>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">{{ r.action }}</h6>
+                            <p class="small text-secondary mb-2">{{ r.details or r.summary_statement }}</p>
+                            {% if r.project_name %}
+                            <div class="small text-muted mt-auto pt-2 border-top">
+                                <i class="fa-solid fa-diagram-project me-1"></i> Project: <strong>{{ r.project_name }}</strong>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-wand-magic-sparkles fs-1 text-primary mb-2"></i>
+                        <div>All portfolio interventions are currently optimized.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 8. WHAT-IF SIMULATOR TAB (Officer & Admin) -->
+            {% if current_user.role in ['admin', 'officer'] %}
+            <div class="tab-pane fade" id="tab-simulator">
+                <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-4">
+                    <i class="fa-solid fa-circle-info fs-5"></i>
+                    <small>
+                        <strong>Decision-Support Counterfactual Simulator:</strong> Adjust progress, delays, milestone lags, or contract variances to stress test project risk index in real time.
+                    </small>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Sliders Column -->
+                    <div class="col-lg-5">
+                        <div class="card border rounded-3 p-4 bg-light">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Scenario Parameters</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Select Monitored Project</label>
+                                <select id="simProjectSelect" class="form-select form-select-sm" onchange="loadSimProject(this.value)">
+                                    {% for p in all_projects %}
+                                    <option value="{{ p.id }}" {% if selected_project and selected_project.id == p.id %}selected{% endif %}>
+                                        {{ p.project_code }} — {{ p.project_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>Simulated Physical Progress</span>
+                                    <span id="simProgVal" class="text-primary">{{ selected_project.physical_progress if selected_project else 50 }}%</span>
+                                </div>
+                                <input type="range" class="form-range" id="simProgRange" min="0" max="100" step="1" value="{{ selected_project.physical_progress if selected_project else 50 }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>Simulated Delay Days</span>
+                                    <span id="simDelayVal" class="text-danger">{{ selected_project.delay_days if selected_project else 60 }} days</span>
+                                </div>
+                                <input type="range" class="form-range" id="simDelayRange" min="0" max="730" step="15" value="{{ selected_project.delay_days if selected_project else 60 }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>Delayed Milestones</span>
+                                    <span id="simMilestoneVal" class="text-warning-emphasis">{{ selected_project.milestones_delayed if selected_project else 1 }}</span>
+                                </div>
+                                <input type="range" class="form-range" id="simMilestoneRange" min="0" max="6" step="1" value="{{ selected_project.milestones_delayed if selected_project else 1 }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Contractor Performance Status</label>
+                                <select id="simContractorSelect" class="form-select form-select-sm">
+                                    <option value="On Track">On Track</option>
+                                    <option value="Minor Delay">Minor Delay</option>
+                                    <option value="Delayed">Delayed</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-sm w-100 shadow-sm" onclick="runSimHubSimulation()">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Compute Simulated Risk Impact
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output Column -->
+                    <div class="col-lg-7">
+                        <div class="card border rounded-3 p-4 bg-white h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-pie text-success me-2"></i>Predictive Impact Analysis</h6>
+                            
+                            <div class="row g-3 text-center mb-4">
+                                <div class="col-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <div class="small text-muted">Baseline Risk Score</div>
+                                        <div class="fs-2 fw-bold text-secondary" id="simBaselineScore">{{ selected_project.risk_score if selected_project else 45 }}/100</div>
+                                        <span class="badge bg-secondary-subtle text-secondary border" id="simBaselineTier">{{ selected_project.risk_level if selected_project else 'MEDIUM' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 border rounded bg-light">
+                                        <div class="small text-muted">Simulated Risk Score</div>
+                                        <div class="fs-2 fw-bold text-danger" id="simSimulatedScore">--</div>
+                                        <span class="badge bg-danger-subtle text-danger border" id="simSimulatedTier">Run Simulation</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="simDeltaResult" class="p-3 border rounded bg-light mb-3">
+                                <div class="small fw-semibold text-dark mb-1">Impact Summary:</div>
+                                <p class="small text-secondary mb-0" id="simExplanationText">
+                                    Select parameters and tap "Compute Simulated Risk Impact" to observe ML model risk shifts.
+                                </p>
+                            </div>
+
+                            <div class="small text-muted mt-auto pt-3 border-top text-center">
+                                <i class="fa-solid fa-microchip me-1"></i> Powered by Multi-Model ML Ensemble (Random Forest + XGBoost + LightGBM).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Simulator helper script
+function runSimHubSimulation() {
+    const projId = document.getElementById('simProjectSelect') ? document.getElementById('simProjectSelect').value : null;
+    if (!projId) return;
+
+    const phys = parseFloat(document.getElementById('simProgRange').value);
+    const delay = parseInt(document.getElementById('simDelayRange').value);
+    const delayedMilestones = parseInt(document.getElementById('simMilestoneRange').value);
+    const contractorStatus = document.getElementById('simContractorSelect').value;
+
+    fetch('/api/simulate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
+        },
+        body: JSON.stringify({
+            project_id: projId,
+            physical_progress: phys,
+            delay_days: delay,
+            milestones_delayed: delayedMilestones,
+            contractor_status: contractorStatus
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('simBaselineScore').innerText = Math.round(data.baseline.overall_risk_score) + '/100';
+            document.getElementById('simSimulatedScore').innerText = Math.round(data.simulated.overall_risk_score) + '/100';
+            document.getElementById('simSimulatedTier').innerText = data.simulated.risk_level;
+            
+            const delta = data.delta.risk_score_diff;
+            const deltaSign = delta > 0 ? '+' : '';
+            document.getElementById('simExplanationText').innerText = 
+                `Risk score shift: ${deltaSign}${delta} points. Delay probability: ${data.simulated.delay_probability}%. Health score: ${data.simulated.health_score}/100. ${data.simulated.explanation}`;
+        }
+    })
+    .catch(err => console.error("Simulation error:", err));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const pRange = document.getElementById('simProgRange');
+    if (pRange) {
+        pRange.addEventListener('input', e => document.getElementById('simProgVal').innerText = e.target.value + '%');
+    }
+    const dRange = document.getElementById('simDelayRange');
+    if (dRange) {
+        dRange.addEventListener('input', e => document.getElementById('simDelayVal').innerText = e.target.value + ' days');
+    }
+    const mRange = document.getElementById('simMilestoneRange');
+    if (mRange) {
+        mRange.addEventListener('input', e => document.getElementById('simMilestoneVal').innerText = e.target.value);
+    }
+});
+</script>
+{% endblock %}

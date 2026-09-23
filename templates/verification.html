@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Engineering Verification & Quality Hub — Web-Based Integrated Project-Monitoring Platform{% endblock %}
+{% block header_title %}Engineering Verification & Quality Assurance{% endblock %}
+{% block breadcrumb %}Site Inspections, BIS Laboratory Tests, Contractor Licensing & DLP Monitoring{% endblock %}
+
+{% block content %}
+<!-- Officer Role Designation Banner -->
+<div class="alert alert-primary border-0 shadow-sm d-flex align-items-center justify-content-between p-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <i class="fa-solid fa-clipboard-check text-primary fs-3"></i>
+        <div>
+            <div class="fw-bold">Central Engineering Verification Command &bull; {{ current_user.full_name or current_user.username }}</div>
+            <small class="text-secondary">
+                Designation: <span class="badge bg-light text-dark border">{{ current_user.technical_designation or 'Executive Verification Officer' }}</span> &bull; 
+                Role: <span class="badge bg-primary text-uppercase">{{ current_user.role }}</span> &bull; 
+                Jurisdiction: {{ current_user.jurisdiction or 'All Assigned Engineering Works' }}
+            </small>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('engineering.new_inspection') }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-clipboard-check me-1"></i> Log Site Inspection
+        </a>
+        <a href="{{ url_for('engineering.new_quality_test') }}" class="btn btn-success btn-sm">
+            <i class="fa-solid fa-vial me-1"></i> Record Quality Test
+        </a>
+        <a href="{{ url_for('data_sync.officer_data_entry') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Verified Entry
+        </a>
+    </div>
+</div>
+
+<!-- Verification KPI Ribbon -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Site Inspections</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ inspections|length }}</div>
+            <div class="small text-muted"><i class="fa-solid fa-ruler-combined text-primary me-1"></i> Field Measurements Recorded</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">Pending EE Reviews</div>
+            <div class="fs-4 fw-bold {% if pending_ee_reviews > 0 %}text-warning{% else %}text-success{% endif %} mt-1">
+                {{ pending_ee_reviews }}
+            </div>
+            <div class="small text-muted"><i class="fa-solid fa-stamp text-warning me-1"></i> Awaiting Technical Certification</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">BIS Quality Tests</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ lab_tests|length }}</div>
+            <div class="small text-muted">
+                <span class="text-success fw-semibold">{{ passed_tests }} Passed</span> &bull; 
+                <span class="text-danger fw-semibold">{{ failed_tests }} Failed</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="text-muted small text-uppercase fw-semibold">DLP Warranties Monitored</div>
+            <div class="fs-4 fw-bold text-dark mt-1">{{ dlp_records|length }}</div>
+            <div class="small text-muted"><i class="fa-solid fa-road text-info me-1"></i> Post-Construction Audits</div>
+        </div>
+    </div>
+</div>
+
+<!-- 6-Tab Master Verification Hub -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom p-0">
+        <ul class="nav nav-tabs card-header-tabs m-0 px-3 flex-wrap" id="verificationHubTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active py-3" data-bs-toggle="tab" data-bs-target="#tab-inspections">
+                    <i class="fa-solid fa-ruler-combined me-1"></i> 1. Site Inspections ({{ inspections|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-materials">
+                    <i class="fa-solid fa-cubes me-1"></i> 2. Material & Quality ({{ materials|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-bis-labs">
+                    <i class="fa-solid fa-vial-circle-check text-success me-1"></i> 3. BIS/Lab Tests ({{ lab_tests|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-contractor-verify">
+                    <i class="fa-solid fa-id-card text-primary me-1"></i> 4. Contractor Verification
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-documents">
+                    <i class="fa-solid fa-file-shield text-info me-1"></i> 5. Documents ({{ documents|length }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link py-3" data-bs-toggle="tab" data-bs-target="#tab-dlp">
+                    <i class="fa-solid fa-road text-warning me-1"></i> 6. Post-Construction DLP ({{ dlp_records|length }})
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body p-4">
+        <div class="tab-content">
+
+            <!-- 1. SITE INSPECTIONS TAB -->
+            <div class="tab-pane fade show active" id="tab-inspections">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-dark">Logged Field Inspection Reports & Measurements</h6>
+                    <a href="{{ url_for('engineering.new_inspection') }}" class="btn btn-sm btn-primary">
+                        <i class="fa-solid fa-plus me-1"></i> New Site Inspection
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project Code & Name</th>
+                                <th>Stage Inspected</th>
+                                <th>Field Progress</th>
+                                <th>Inspecting Officer</th>
+                                <th>Date</th>
+                                <th>EE Verification Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in inspections %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=i.project_id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ i.project.project_name if i.project else 'Project' }}
+                                    </a>
+                                    <div class="small text-muted font-monospace">{{ i.project.project_code if i.project else '' }}</div>
+                                </td>
+                                <td class="small">{{ i.construction_stage or 'Civil Substructure' }}</td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border font-monospace">{{ i.observed_physical_progress }}%</span>
+                                </td>
+                                <td class="small">{{ i.inspecting_officer_name }} ({{ i.inspecting_officer_designation }})</td>
+                                <td class="small text-muted">{{ i.inspection_date.strftime('%d-%b-%Y') if i.inspection_date else 'Recent' }}</td>
+                                <td>
+                                    {% if i.executive_engineer_verified %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="fa-solid fa-check me-1"></i> Certified by EE
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                        <i class="fa-solid fa-clock me-1"></i> Pending EE Review
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('engineering.inspection_detail', inspection_id=i.id) }}" class="btn btn-sm btn-outline-primary">
+                                        View Report <i class="fa-solid fa-arrow-right ms-1"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No site inspections logged yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. MATERIAL & QUALITY TAB -->
+            <div class="tab-pane fade" id="tab-materials">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0 text-dark">Procured Materials Batch Registry</h6>
+                    <a href="{{ url_for('engineering.new_quality_test') }}" class="btn btn-sm btn-success">
+                        <i class="fa-solid fa-vial me-1"></i> Record Quality Lab Test
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Material Name</th>
+                                <th>Brand / Manufacturer</th>
+                                <th>Batch Number</th>
+                                <th>Quantity Procured</th>
+                                <th>Project</th>
+                                <th>Approval Status</th>
+                                <th>BIS Standard</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in materials %}
+                            <tr>
+                                <td class="fw-bold small">{{ m.material_name }}</td>
+                                <td class="small">{{ m.brand_manufacturer }}</td>
+                                <td class="small font-monospace">{{ m.batch_number }}</td>
+                                <td class="small">{{ m.quantity_procured }} {{ m.unit }}</td>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=m.project_id) }}" class="small text-dark text-decoration-none">
+                                        {{ m.project.project_code if m.project else 'PRJ' }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge {% if m.approval_status == 'Approved' %}bg-success{% elif m.approval_status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ m.approval_status }}
+                                    </span>
+                                </td>
+                                <td class="small text-muted">{{ m.quality_certification_status or 'BIS Standard' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. BIS/LAB TESTS TAB -->
+            <div class="tab-pane fade" id="tab-bis-labs">
+                <!-- BIS Standards Notice -->
+                <div class="p-3 bg-light rounded border mb-3">
+                    <div class="d-flex align-items-center gap-2 small">
+                        <i class="fa-solid fa-vial-circle-check text-success fs-5"></i>
+                        <span>
+                            <strong>Mandatory BIS Testing Standards:</strong>
+                            Steel Rebar: <code>IS 1786</code> &bull; 
+                            Concrete Compressive Strength (7/28 Days): <code>IS 516</code> &bull; 
+                            Cement Grade & Setting: <code>IS 269</code> &bull; 
+                            Bitumen Viscosity: <code>IS 73</code>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Test Type</th>
+                                <th>Material Tested</th>
+                                <th>Sample ID</th>
+                                <th>Testing Laboratory</th>
+                                <th>Result / Observed Value</th>
+                                <th>Specification Target</th>
+                                <th>Verdict</th>
+                                <th>Certificate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in lab_tests %}
+                            <tr>
+                                <td class="fw-bold small">{{ t.test_type }}</td>
+                                <td class="small">{{ t.material.material_name if t.material else 'Batch Material' }}</td>
+                                <td class="small font-monospace">{{ t.sample_id or 'SMP-001' }}</td>
+                                <td class="small">{{ t.testing_laboratory }}</td>
+                                <td class="small fw-semibold">{{ t.result_value or 'Met Spec' }}</td>
+                                <td class="small text-muted">{{ t.specification_standard }}</td>
+                                <td>
+                                    <span class="badge {% if t.status == 'PASS' %}bg-success{% elif t.status == 'FAIL' %}bg-danger{% else %}bg-warning text-dark{% endif %} font-monospace">
+                                        {{ t.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if t.test_certificate_path %}
+                                    <a href="{{ t.test_certificate_path }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-file-arrow-down"></i>
+                                    </a>
+                                    {% else %}
+                                    <span class="badge bg-light text-secondary border">Recorded</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="8" class="text-center py-4 text-muted">No BIS lab test records found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 4. CONTRACTOR VERIFICATION TAB -->
+            <div class="tab-pane fade" id="tab-contractor-verify">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Contractor Name</th>
+                                <th>Registration Number</th>
+                                <th>License Number</th>
+                                <th>Contractor Class</th>
+                                <th>License Validity</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contractors %}
+                            <tr>
+                                <td class="fw-bold">{{ c.name }}</td>
+                                <td class="font-monospace small">{{ c.registration_number }}</td>
+                                <td class="font-monospace small">{{ c.contractor_license_number or 'LIC-STATE-2024' }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ c.contractor_class }}</span></td>
+                                <td class="small">{{ c.license_validity_date or '31-Dec-2027' }}</td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="fa-solid fa-check me-1"></i> {{ c.verification_status or 'Verified' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('contractors.detail', contractor_id=c.id) }}" class="btn btn-sm btn-outline-primary">
+                                        Verify Profile
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. DOCUMENTS TAB -->
+            <div class="tab-pane fade" id="tab-documents">
+                {% if documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Document Title</th>
+                                <th>Linked Entity</th>
+                                <th>Category</th>
+                                <th>Uploaded Date</th>
+                                <th>Status</th>
+                                <th>Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in documents %}
+                            <tr>
+                                <td class="fw-semibold small">{{ d.title }}</td>
+                                <td class="small">{{ d.project.project_name if d.project else (d.contractor.name if d.contractor else 'General') }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ d.document_type }}</span></td>
+                                <td class="small text-muted">{{ d.upload_date.strftime('%d-%b-%Y') if d.upload_date else 'Recent' }}</td>
+                                <td><span class="badge bg-success-subtle text-success border border-success-subtle">Verified</span></td>
+                                <td>
+                                    <a href="{{ d.file_path }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-file-shield fs-1 mb-2"></i>
+                    <div>No uploaded verification documents found.</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 6. POST-CONSTRUCTION DLP TAB -->
+            <div class="tab-pane fade" id="tab-dlp">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Executing Contractor</th>
+                                <th>DLP Period</th>
+                                <th>Warranty Expiration</th>
+                                <th>Defects Reported</th>
+                                <th>Rectification Status</th>
+                                <th>Inspecting Authority</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in dlp_records %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('projects.detail', project_id=d.project_id) }}" class="fw-bold text-dark text-decoration-none">
+                                        {{ d.project.project_name if d.project else 'PRJ' }}
+                                    </a>
+                                </td>
+                                <td class="small">{{ d.contractor.name if d.contractor else 'Contractor' }}</td>
+                                <td class="small">{{ d.dlp_duration_months or 36 }} Months</td>
+                                <td class="small fw-semibold text-danger">{{ d.dlp_end_date or '31-Dec-2026' }}</td>
+                                <td>
+                                    <span class="badge {% if d.quality_status == 'No significant defects reported' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ d.quality_status }}
+                                    </span>
+                                </td>
+                                <td><span class="badge bg-light text-secondary border">{{ d.rectification_status or 'Active Warranty' }}</span></td>
+                                <td class="small text-muted">{{ d.inspection_agency or 'Quality Control Wing' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No post-construction DLP records found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import login_required, current_user
-from database.models import Project
+from database.models import Project, User, SiteInspectionRecord, PublicComplaint, DepartmentHierarchy, DocumentEvidence
 from services.analytics_service import get_dashboard_kpis, get_chart_analytics, get_dashboard_alerts, get_dashboard_recommendations
 
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -35,6 +35,60 @@ def index():
     kpis = get_dashboard_kpis(clean_filters, project_ids=authorized_ids)
     alerts = get_dashboard_alerts(limit=6, project_ids=authorized_ids)
     recommendations = get_dashboard_recommendations(limit=5, project_ids=authorized_ids)
+
+    # Role-specific operational telemetry and governance queues
+    role_context = {}
+    if current_user.role == 'officer':
+        assigned_query = Project.query
+        if authorized_ids is not None:
+            assigned_query = assigned_query.filter(Project.id.in_(authorized_ids))
+        assigned_projects = assigned_query.order_by(Project.risk_score.desc()).limit(6).all()
+        
+        insp_query = SiteInspectionRecord.query.filter(SiteInspectionRecord.verification_status.ilike('%Pending%'))
+        if authorized_ids is not None:
+            insp_query = insp_query.filter(SiteInspectionRecord.project_id.in_(authorized_ids))
+        pending_inspections = insp_query.order_by(SiteInspectionRecord.inspection_date.desc()).limit(5).all()
+        pending_inspections_count = insp_query.count()
+
+        comp_query = PublicComplaint.query.filter(~PublicComplaint.status.in_(['Resolved', 'Closed']))
+        if authorized_ids is not None:
+            comp_query = comp_query.filter(PublicComplaint.project_id.in_(authorized_ids))
+        assigned_complaints = comp_query.order_by(PublicComplaint.created_at.desc()).limit(5).all()
+        assigned_complaints_count = comp_query.count()
+
+        role_context = {
+            'assigned_projects': assigned_projects,
+            'assigned_projects_count': len(assigned_projects),
+            'pending_inspections': pending_inspections,
+            'pending_inspections_count': pending_inspections_count,
+            'assigned_complaints': assigned_complaints,
+            'assigned_complaints_count': assigned_complaints_count,
+        }
+    elif current_user.role == 'admin':
+        pending_users = User.query.filter_by(status='pending_approval').order_by(User.created_at.desc()).limit(5).all()
+        pending_users_count = User.query.filter_by(status='pending_approval').count()
+        total_users_count = User.query.count()
+        total_depts = DepartmentHierarchy.query.count()
+        unresolved_complaints_count = PublicComplaint.query.filter(~PublicComplaint.status.in_(['Resolved', 'Closed'])).count()
+        total_docs = DocumentEvidence.query.count()
+        verified_docs = DocumentEvidence.query.filter_by(verification_status='Verified').count()
+        sync_integrity_pct = round((verified_docs / total_docs * 100.0), 1) if total_docs > 0 else 100.0
+
+        role_context = {
+            'pending_users': pending_users,
+            'pending_users_count': pending_users_count,
+            'total_users_count': total_users_count,
+            'total_departments_count': total_depts,
+            'unresolved_complaints_count': unresolved_complaints_count,
+            'sync_integrity_pct': sync_integrity_pct,
+            'total_docs_count': total_docs,
+        }
+    else:  # viewer
+        role_context = {
+            'total_public_projects': Project.query.count(),
+            'completed_public_projects': Project.query.filter_by(project_status='Completed').count(),
+            'ongoing_public_projects': Project.query.filter_by(project_status='Ongoing').count(),
+        }
     
     return render_template(
         'dashboard.html',
@@ -44,7 +98,8 @@ def index():
         ministries=ministries,
         sectors=sectors,
         states=states,
-        active_filters=active_filters
+        active_filters=active_filters,
+        role_context=role_context
     )
 
 @dashboard_bp.route('/api/dashboard')

@@ -118,7 +118,9 @@ class ContractorService:
             'total_final_cost': round(total_final_cost, 2),
             'total_expenditure': round(total_expenditure, 2),
             'total_cost_variance': total_cost_variance,
+            'cost_variance': total_cost_variance,
             'total_cost_variance_pct': total_cost_variance_pct,
+            'cost_variance_pct': total_cost_variance_pct,
             'projects_within_budget': projects_within_budget,
             'projects_with_cost_variation': projects_with_cost_variation,
             'tests_total': tests_total,
@@ -127,6 +129,8 @@ class ContractorService:
             'tests_failed': tests_failed,
             'tests_conditional': tests_conditional,
             'test_pass_rate': test_pass_rate,
+            'quality_pass_rate': test_pass_rate,
+            'avg_delay_days': round(sum((p.delay_days or 0) for p in projects) / len(projects), 1) if projects else 0.0,
             'materials_count': len(materials),
             'defects_total': defects_total,
             'no_defects_count': no_defects_count,
@@ -333,3 +337,19 @@ class ContractorService:
             'status': 'verified',
             'fairness_standard': 'Section 25 Verified Empirical Standard'
         }
+
+    @classmethod
+    def get_contractor_dashboard_stats(cls):
+        """
+        Alias for get_contractor_intelligence_dashboard_stats.
+        """
+        return cls.get_contractor_intelligence_dashboard_stats()
+
+    @classmethod
+    def get_top_performing_contractors(cls, limit=5):
+        """
+        Returns top contractors ranked by on-schedule completion and quality metrics.
+        """
+        contractors = cls.get_all_contractors_summary()
+        contractors.sort(key=lambda c: (c.get('on_schedule_rate', 0), c.get('test_pass_rate', 0)), reverse=True)
+        return contractors[:limit]

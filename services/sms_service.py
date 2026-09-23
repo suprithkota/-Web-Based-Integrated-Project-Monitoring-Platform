@@ -56,7 +56,7 @@ def send_sms_code(phone_number, code, purpose="Password Reset", username=None):
     """
     cleaned_phone = phone_number.strip() if phone_number else ""
     user_str = f" for user '{username}'" if username else ""
-    message_text = f"[ProjectPulse AI] Your official security verification code{user_str} is: {code}. Valid for 10 minutes. Do not share this code."
+    message_text = f"[Web-Based Integrated Project-Monitoring Platform] Your official security verification code{user_str} is: {code}. Valid for 10 minutes. Do not share this code."
 
     sms_record = {
         'phone_number': cleaned_phone,

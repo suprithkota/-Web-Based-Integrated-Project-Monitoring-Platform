@@ -64,7 +64,7 @@ def send_verification_email(user, token):
     """
     config = get_email_config()
     verification_url = f"{config['base_url']}/verify-email/{token}"
-    subject = "ProjectPulse AI — Verify Your Official Email Address"
+    subject = "Web-Based Integrated Project-Monitoring Platform — Verify Your Official Email Address"
 
     html_content = f"""
     <!DOCTYPE html>
@@ -84,7 +84,7 @@ def send_verification_email(user, token):
     <body>
       <div class="container">
         <div class="header">
-          <h2 style="margin: 0;">ProjectPulse AI</h2>
+          <h2 style="margin: 0; font-size: 20px;">Web-Based Integrated Project-Monitoring Platform</h2>
           <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">Infrastructure Project Intelligence & Early Warning Platform</div>
         </div>
         <div class="body">
@@ -145,7 +145,7 @@ def send_password_reset_email(user, token):
     """
     config = get_email_config()
     reset_url = f"{config['base_url']}/reset-password/{token}"
-    subject = "ProjectPulse AI — Password Reset Request"
+    subject = "Web-Based Integrated Project-Monitoring Platform — Password Reset Request"
 
     html_content = f"""
     <!DOCTYPE html>
@@ -164,7 +164,7 @@ def send_password_reset_email(user, token):
     <body>
       <div class="container">
         <div class="header">
-          <h2 style="margin: 0;">ProjectPulse AI</h2>
+          <h2 style="margin: 0; font-size: 20px;">Web-Based Integrated Project-Monitoring Platform</h2>
           <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">Infrastructure Project Intelligence & Early Warning Platform</div>
         </div>
         <div class="body">

@@ -4,6 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 class Config:
+    APP_NAME = 'Web-Based Integrated Project-Monitoring Platform'
     SECRET_KEY = os.environ.get('SECRET_KEY', 'projectpulse-ai-gov-intel-key-2026')
     
     # SQLite default, PostgreSQL ready

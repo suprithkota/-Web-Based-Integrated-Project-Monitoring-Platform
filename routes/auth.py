@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import func
 from extensions import limiter
 from database import db
-from database.models import User, SecurityAuditLog, Project, ProjectAssignment
+from database.models import User, SecurityAuditLog, Project, ProjectAssignment, DepartmentHierarchy
 from services.auth_validator import (
     validate_password_strength,
     validate_password_confirmation,
@@ -902,6 +902,71 @@ def get_current_user():
 @admin_required
 def admin_root():
     return redirect(url_for('auth.admin_users'))
+
+@auth_bp.route('/admin/organizations', methods=['GET', 'POST'])
+@admin_required
+def admin_organizations():
+    if request.method == 'POST':
+        dept_name = request.form.get('department_name', '').strip()
+        region = request.form.get('region_circle', '').strip()
+        division = request.form.get('division', '').strip()
+        ce = request.form.get('chief_engineer', '').strip()
+        ee = request.form.get('executive_engineer', '').strip()
+        email = request.form.get('official_routing_email', '').strip()
+        
+        if not dept_name:
+            flash("Department name is required.", "danger")
+        else:
+            dh = DepartmentHierarchy(
+                department_name=dept_name,
+                region_circle=region,
+                division=division,
+                chief_engineer=ce,
+                executive_engineer=ee,
+                official_routing_email=email
+            )
+            db.session.add(dh)
+            db.session.commit()
+            log_security_event('ORGANIZATION_CREATE', details=f"Added hierarchy unit {dept_name} - {division}")
+            flash(f"Engineering hierarchy unit '{dept_name}' successfully added.", "success")
+            return redirect(url_for('auth.admin_organizations'))
+
+    hierarchies = DepartmentHierarchy.query.order_by(DepartmentHierarchy.department_name).all()
+    
+    # Aggregate ministries metrics from Project
+    ministry_records = db.session.query(
+        Project.ministry,
+        func.count(Project.id),
+        func.sum(Project.approved_cost),
+        func.sum(Project.expenditure)
+    ).group_by(Project.ministry).all()
+
+    ministries = []
+    total_outlay = 0.0
+    total_projects = 0
+    for min_name, p_count, approved, exp in ministry_records:
+        approved = approved or 0.0
+        exp = exp or 0.0
+        total_outlay += approved
+        total_projects += p_count
+        util = round((exp / approved * 100.0), 1) if approved > 0 else 0.0
+        sectors = [s[0] for s in db.session.query(Project.sector).filter_by(ministry=min_name).distinct().all()]
+        ministries.append({
+            'name': min_name,
+            'project_count': p_count,
+            'total_approved': approved,
+            'total_expenditure': exp,
+            'utilization': util,
+            'sectors': sectors
+        })
+
+    return render_template(
+        'admin_organizations.html',
+        hierarchies=hierarchies,
+        ministries=ministries,
+        total_outlay=total_outlay,
+        total_projects=total_projects
+    )
 
 @auth_bp.route('/admin/settings', methods=['GET', 'POST'])
 @admin_required

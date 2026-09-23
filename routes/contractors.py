@@ -49,6 +49,7 @@ def dashboard():
 # 2. CONTRACTOR MASTER DIRECTORY (PUBLIC / ALL ROLES)
 # =========================================================================
 @contractors_bp.route('/contractors')
+@contractors_bp.route('/contractors/hub', endpoint='contractors_hub')
 def index():
     search = request.args.get('search', '').strip()
     company_type = request.args.get('company_type', '').strip()
@@ -72,9 +73,28 @@ def index():
     company_types = db.session.query(Contractor.company_type).distinct().all()
     contractor_classes = db.session.query(Contractor.contractor_class).distinct().all()
 
+    stats = ContractorService.get_contractor_dashboard_stats()
+    top_contractors = ContractorService.get_top_performing_contractors()
+    all_projects = Project.query.order_by(Project.project_name.asc()).all()
+
+    if any(filters.values()) or sector:
+        filtered_ids = {c['id'] for c in contractors}
+        top_contractors = [tc for tc in top_contractors if tc.get('id') in filtered_ids]
+        all_projects = [p for p in all_projects if p.contractor_id in filtered_ids]
+
+    recent_delays = ProjectDelayRecord.query.order_by(ProjectDelayRecord.recorded_at.desc()).limit(15).all()
+    recent_tests = MaterialQualityTest.query.order_by(MaterialQualityTest.test_date.desc()).limit(15).all()
+    documents = DocumentEvidence.query.order_by(DocumentEvidence.uploaded_at.desc()).limit(20).all()
+
     return render_template(
-        'contractors/contractors_list.html',
+        'contractors/contractors_hub.html',
         contractors=contractors,
+        top_contractors=top_contractors,
+        stats=stats,
+        all_projects=all_projects,
+        recent_delays=recent_delays,
+        recent_tests=recent_tests,
+        documents=documents,
         filters=filters,
         sector=sector,
         company_types=[ct[0] for ct in company_types if ct[0]],
@@ -247,6 +267,7 @@ def post_construction():
 # 8. CITIZEN COMPLAINTS & GRIEVANCE SYSTEM (PUBLIC & OFFICER)
 # =========================================================================
 @contractors_bp.route('/contractors/complaints')
+@contractors_bp.route('/contractors/complaints', endpoint='complaints_index')
 def complaints_list():
     status = request.args.get('status', '').strip()
     query = PublicComplaint.query
@@ -258,6 +279,7 @@ def complaints_list():
 
 @contractors_bp.route('/contractors/complaints/new', methods=['GET', 'POST'])
 @contractors_bp.route('/contractors/complaints/new', methods=['GET', 'POST'], endpoint='new_complaint')
+@contractors_bp.route('/contractors/complaints/new', methods=['GET', 'POST'], endpoint='complaint_form')
 def complaint_new():
     if request.method == 'POST':
         project_id = request.form.get('project_id', type=int)
@@ -330,6 +352,38 @@ def complaint_detail(complaint_id):
         return redirect(url_for('contractors.complaints_list'))
 
     return render_template('contractors/complaint_detail.html', complaint=complaint)
+
+@contractors_bp.route('/contractors/my-complaints')
+@contractors_bp.route('/grievances/my-complaints', endpoint='my_complaints')
+def my_complaints():
+    search_ref = request.args.get('ref', '').strip()
+    query = PublicComplaint.query
+    
+    if search_ref:
+        query = query.filter(
+            (PublicComplaint.complaint_code.ilike(f"%{search_ref}%")) |
+            (PublicComplaint.complainant_contact.ilike(f"%{search_ref}%")) |
+            (PublicComplaint.location.ilike(f"%{search_ref}%"))
+        )
+    elif current_user.is_authenticated:
+        u_name = current_user.full_name or current_user.username
+        u_email = current_user.email or ''
+        u_phone = getattr(current_user, 'phone_number', '') or ''
+        
+        conds = [PublicComplaint.complainant_name.ilike(f"%{u_name}%")]
+        if u_email:
+            conds.append(PublicComplaint.complainant_contact.ilike(f"%{u_email}%"))
+        if u_phone:
+            conds.append(PublicComplaint.complainant_contact.ilike(f"%{u_phone}%"))
+        
+        user_complaints = query.filter(db.or_(*conds)).order_by(PublicComplaint.created_at.desc()).all()
+        if user_complaints:
+            return render_template('contractors/my_complaints.html', complaints=user_complaints, search_ref=search_ref)
+        complaints = PublicComplaint.query.order_by(PublicComplaint.created_at.desc()).limit(15).all()
+        return render_template('contractors/my_complaints.html', complaints=complaints, search_ref=search_ref)
+        
+    complaints = query.order_by(PublicComplaint.created_at.desc()).limit(20).all()
+    return render_template('contractors/my_complaints.html', complaints=complaints, search_ref=search_ref)
 
 # =========================================================================
 # 9. OFFICER & ADMIN MANAGEMENT ACTIONS

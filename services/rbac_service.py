@@ -20,6 +20,60 @@ def normalize_role(role_name):
     clean = str(role_name).strip().lower()
     return ROLE_ALIASES.get(clean, clean)
 
+# Central RBAC Permissions Matrix
+PERMISSIONS = {
+    # Viewer, Officer, Admin permissions
+    'VIEW_PROJECTS': {'viewer', 'officer', 'admin'},
+    'VIEW_ANALYTICS': {'viewer', 'officer', 'admin'},
+    'VIEW_MAP': {'viewer', 'officer', 'admin'},
+    'VIEW_ALERTS': {'viewer', 'officer', 'admin'},
+    'ASK_AI': {'viewer', 'officer', 'admin'},
+    'REPORT_ISSUE': {'viewer', 'officer', 'admin'},
+    'TRACK_COMPLAINT': {'viewer', 'officer', 'admin'},
+    
+    # Officer & Admin permissions
+    'VIEW_VERIFICATION': {'officer', 'admin'},
+    'LOG_INSPECTION': {'officer', 'admin'},
+    'RECORD_LAB_TEST': {'officer', 'admin'},
+    'VIEW_CONTRACTORS': {'officer', 'admin'},
+    'TRIAGE_COMPLAINT': {'officer', 'admin'},
+    'EDIT_ASSIGNED_PROJECT': {'officer', 'admin'},
+    'CREATE_PROJECT': {'officer', 'admin'},
+    'SIMULATE_SCENARIO': {'officer', 'admin'},
+    'VIEW_OFFICER_WORKSPACE': {'officer', 'admin'},
+    'VIEW_RISK_INTELLIGENCE': {'officer', 'admin'},
+    'RESOLVE_CONFLICTS': {'officer', 'admin'},
+    
+    # Admin only permissions
+    'MANAGE_USERS': {'admin'},
+    'MANAGE_ORGANIZATIONS': {'admin'},
+    'MANAGE_SYSTEM_SETTINGS': {'admin'},
+    'VIEW_AUDIT_LOGS': {'admin'},
+    'DELETE_PROJECT': {'admin'},
+    'CONFIGURE_DATA_SOURCES': {'admin'},
+    'INGEST_DATA': {'admin'},
+}
+
+def has_permission(permission, user=None):
+    """
+    Checks if a user has a specific fine-grained permission.
+    Defaults to current_user if user is not supplied.
+    """
+    if user is None:
+        user = current_user
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    user_role = normalize_role(getattr(user, 'role', ''))
+    allowed = PERMISSIONS.get(permission, set())
+    return user_role in allowed
+
+def permission_required(permission):
+    """
+    Decorator enforcing that the current user possesses the required permission.
+    """
+    allowed_roles = PERMISSIONS.get(permission, set())
+    return role_required(*allowed_roles)
+
 def role_required(*allowed_roles):
     """
     Enforces that the current authenticated user has one of the specified roles.

@@ -84,15 +84,22 @@ def api_chat():
         return jsonify({
             'status': 'success',
             'query': user_query,
-            'response': "### Security Policy Notice\n\nSystem configurations, user credentials, authentication tokens, cryptographic keys, and database credentials are confidential and protected by ProjectPulse AI security policies. This assistant only provides analytics for authorized infrastructure monitoring data."
+            'response': "### Security Policy Notice\n\nSystem configurations, user credentials, authentication tokens, cryptographic keys, and database credentials are confidential and protected by Web-Based Integrated Project-Monitoring Platform security policies. This assistant only provides analytics for authorized infrastructure monitoring data."
         })
         
+    mode = str(data.get('mode', 'chat')).strip().lower()
     authorized_ids = current_user.get_authorized_project_ids() if hasattr(current_user, 'get_authorized_project_ids') else None
-    answer = assistant_service.process_query(user_query, authorized_project_ids=authorized_ids)
+    answer = assistant_service.process_query(
+        user_query,
+        authorized_project_ids=authorized_ids,
+        mode=mode,
+        user_role=current_user.role if hasattr(current_user, 'role') else 'viewer'
+    )
     
     return jsonify({
         'status': 'success',
         'query': user_query,
+        'mode': mode,
         'response': answer
     })
 

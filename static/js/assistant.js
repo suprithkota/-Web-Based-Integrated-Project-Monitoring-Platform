@@ -78,6 +78,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+let currentAssistantMode = 'chat';
+
+function setAssistantMode(mode) {
+    currentAssistantMode = mode;
+
+    // Update active button classes
+    const modeButtons = document.querySelectorAll('#assistantModeGroup .mode-btn');
+    modeButtons.forEach(btn => {
+        if (btn.getAttribute('data-mode') === mode) {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-primary', 'active');
+        } else {
+            btn.classList.remove('btn-primary', 'active');
+            btn.classList.add('btn-outline-secondary');
+        }
+    });
+
+    // Toggle prompt chips containers
+    const allPromptContainers = document.querySelectorAll('.mode-prompts');
+    allPromptContainers.forEach(container => container.classList.add('d-none'));
+
+    const targetContainer = document.getElementById(`prompts-${mode}`);
+    if (targetContainer) {
+        targetContainer.classList.remove('d-none');
+    }
+
+    // Update labels and placeholders
+    const titleEl = document.getElementById('promptModeTitle');
+    const inputEl = document.getElementById('chatInput');
+    if (titleEl && inputEl) {
+        if (mode === 'voice') {
+            titleEl.textContent = 'Voice Query Suggestions (Tap Microphone or Speak)';
+            inputEl.placeholder = 'Click the microphone to speak your query aloud, or type here...';
+            // Trigger microphone if available
+            const micBtn = document.getElementById('micBtn');
+            if (micBtn && !micBtn.classList.contains('disabled')) {
+                micBtn.click();
+            }
+        } else if (mode === 'data') {
+            titleEl.textContent = 'Analytical Telemetry & Statistical Diagnostics';
+            inputEl.placeholder = 'Request delay vs cost correlation, TreeSHAP attributions, or sector variance...';
+        } else if (mode === 'docs') {
+            titleEl.textContent = 'Statutory Documents & Certificate Queries';
+            inputEl.placeholder = 'Search statutory clearance certificates, EIA orders, or lab test documents...';
+        } else {
+            titleEl.textContent = 'Frequently Asked Intelligence Inquiries';
+            inputEl.placeholder = 'Ask about contractors, delays, material tests, or enter project code...';
+        }
+    }
+}
+
 function submitPrompt(promptText) {
     sendChatMessage(promptText);
 }
@@ -86,17 +137,37 @@ function sendChatMessage(messageText) {
     const chatMessages = document.getElementById('chatMessages');
     if (!chatMessages) return;
 
-    // 1. Append User Message
+    // 1. Append User Message with Mode Badge
     const userBubble = document.createElement('div');
     userBubble.className = 'chat-bubble user-bubble';
-    userBubble.innerHTML = escapeHtml(messageText);
+    
+    let modeBadge = '';
+    if (currentAssistantMode === 'data') {
+        modeBadge = '<span class="badge bg-light text-primary me-2 font-monospace" style="font-size: 0.68rem;">📊 DATA MODE</span>';
+    } else if (currentAssistantMode === 'docs') {
+        modeBadge = '<span class="badge bg-light text-warning-emphasis me-2 font-monospace" style="font-size: 0.68rem;">📄 DOCS MODE</span>';
+    } else if (currentAssistantMode === 'voice') {
+        modeBadge = '<span class="badge bg-light text-danger me-2 font-monospace" style="font-size: 0.68rem;">🎙️ VOICE MODE</span>';
+    }
+
+    userBubble.innerHTML = `${modeBadge}${escapeHtml(messageText)}`;
     chatMessages.appendChild(userBubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     // 2. Append Typing Indicator
     const typingBubble = document.createElement('div');
     typingBubble.className = 'chat-bubble assistant-bubble typing-indicator';
-    typingBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> Consulting official database, contractor records & BIS test results...';
+    
+    let typingMsg = 'Consulting official database, contractor records & BIS test results...';
+    if (currentAssistantMode === 'data') {
+        typingMsg = 'Calculating regressions, TreeSHAP attributions & outlier metrics...';
+    } else if (currentAssistantMode === 'docs') {
+        typingMsg = 'Searching statutory document repository & verifying tamper hashes...';
+    } else if (currentAssistantMode === 'voice') {
+        typingMsg = 'Synthesizing voice response from live ground telemetry...';
+    }
+
+    typingBubble.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-2 text-primary"></i> ${typingMsg}`;
     chatMessages.appendChild(typingBubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -104,7 +175,10 @@ function sendChatMessage(messageText) {
     fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: messageText })
+        body: JSON.stringify({
+            query: messageText,
+            mode: currentAssistantMode
+        })
     })
     .then(res => res.json())
     .then(data => {
@@ -115,11 +189,24 @@ function sendChatMessage(messageText) {
         let rawResponse = data.response || 'No response available.';
         let formatted = formatMarkdown(rawResponse);
 
+        let badgeLabel = 'Grounded Official Data';
+        let badgeClass = 'bg-success bg-opacity-10 text-success';
+        if (data.mode === 'data') {
+            badgeLabel = 'Statistical Regression Engine';
+            badgeClass = 'bg-primary bg-opacity-10 text-primary';
+        } else if (data.mode === 'docs') {
+            badgeLabel = 'Verified Document Repository';
+            badgeClass = 'bg-warning bg-opacity-10 text-warning-emphasis';
+        } else if (data.mode === 'voice') {
+            badgeLabel = 'Voice Synthesis Output';
+            badgeClass = 'bg-danger bg-opacity-10 text-danger';
+        }
+
         assistantBubble.innerHTML = `
             <div class="d-flex align-items-center gap-2 mb-2 pb-1 border-bottom">
                 <i class="fa-solid fa-robot text-primary"></i>
-                <strong class="text-primary small">ProjectPulse AI</strong>
-                <span class="badge bg-success bg-opacity-10 text-success ms-auto" style="font-size: 0.65rem;">Grounded Official Data</span>
+                <strong class="text-primary small">Web-Based Integrated Project-Monitoring Platform</strong>
+                <span class="badge ${badgeClass} ms-auto" style="font-size: 0.65rem;">${badgeLabel}</span>
                 <button type="button" class="btn btn-sm btn-link p-0 text-muted ms-2" onclick="speakResponse(this)" title="Read aloud">
                     <i class="fa-solid fa-volume-high"></i>
                 </button>
@@ -129,9 +216,9 @@ function sendChatMessage(messageText) {
         chatMessages.appendChild(assistantBubble);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // Auto-readout if Voice Readout Toggle is on
+        // Auto-readout if Voice Readout Toggle is on or if in voice mode
         const readoutToggle = document.getElementById('voiceReadoutToggle');
-        if (readoutToggle && readoutToggle.checked) {
+        if ((readoutToggle && readoutToggle.checked) || currentAssistantMode === 'voice') {
             speakText(rawResponse);
         }
     })

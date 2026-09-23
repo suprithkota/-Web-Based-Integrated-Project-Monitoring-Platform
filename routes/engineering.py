@@ -10,7 +10,7 @@ from database import db
 from database.models import (
     Project, User, SiteInspectionRecord, MaterialQualityTest,
     ProjectDelayRecord, ProjectMaterial, PublicComplaint,
-    DocumentEvidence, Contractor
+    DocumentEvidence, Contractor, PostConstructionRecord
 )
 from services.rbac_service import role_required, admin_required, officer_required, get_scoped_projects_query
 from services.audit_service import log_security_event
@@ -23,6 +23,71 @@ def _calc_sha256(file_bytes):
     h = hashlib.sha256()
     h.update(file_bytes)
     return h.hexdigest()
+
+# =========================================================================
+# 0. CENTRAL VERIFICATION HUB (OFFICER & ADMIN)
+# =========================================================================
+@engineering_bp.route('/verification')
+@engineering_bp.route('/engineering/verification', endpoint='verification')
+@role_required('admin', 'officer')
+def verification():
+    # Officers see assigned / scoped projects; Admins see all
+    projects_query = get_scoped_projects_query(current_user)
+    projects = projects_query.order_by(Project.project_name.asc()).all()
+    project_ids = [p.id for p in projects]
+
+    # 1. Inspections
+    inspections_query = SiteInspectionRecord.query
+    if current_user.role == 'officer' and project_ids:
+        inspections_query = inspections_query.filter(SiteInspectionRecord.project_id.in_(project_ids))
+    inspections = inspections_query.order_by(SiteInspectionRecord.inspection_date.desc(), SiteInspectionRecord.id.desc()).limit(30).all()
+    pending_ee_reviews = inspections_query.filter(
+        SiteInspectionRecord.verification_status.in_(['Pending Review', 'Pending EE Review'])
+    ).count()
+
+    # 2. Materials
+    materials_query = ProjectMaterial.query
+    if current_user.role == 'officer' and project_ids:
+        materials_query = materials_query.filter(ProjectMaterial.project_id.in_(project_ids))
+    materials = materials_query.order_by(ProjectMaterial.created_at.desc()).limit(30).all()
+
+    # 3. Lab Tests
+    tests_query = MaterialQualityTest.query
+    if current_user.role == 'officer' and project_ids:
+        tests_query = tests_query.filter(MaterialQualityTest.project_id.in_(project_ids))
+    lab_tests = tests_query.order_by(MaterialQualityTest.test_date.desc(), MaterialQualityTest.id.desc()).limit(30).all()
+    passed_tests = tests_query.filter_by(status='PASS').count()
+    failed_tests = tests_query.filter_by(status='FAIL').count()
+
+    # 4. Contractor verification
+    contractors = Contractor.query.order_by(Contractor.name.asc()).all()
+
+    # 5. Documents
+    docs_query = DocumentEvidence.query
+    if current_user.role == 'officer' and project_ids:
+        docs_query = docs_query.filter(
+            (DocumentEvidence.project_id.in_(project_ids)) | (DocumentEvidence.project_id.is_(None))
+        )
+    documents = docs_query.order_by(DocumentEvidence.upload_date.desc()).limit(30).all()
+
+    # 6. Post-construction DLP
+    dlp_query = PostConstructionRecord.query
+    if current_user.role == 'officer' and project_ids:
+        dlp_query = dlp_query.filter(PostConstructionRecord.project_id.in_(project_ids))
+    dlp_records = dlp_query.order_by(PostConstructionRecord.created_at.desc()).limit(30).all()
+
+    return render_template(
+        'verification.html',
+        inspections=inspections,
+        materials=materials,
+        lab_tests=lab_tests,
+        contractors=contractors,
+        documents=documents,
+        dlp_records=dlp_records,
+        pending_ee_reviews=pending_ee_reviews,
+        passed_tests=passed_tests,
+        failed_tests=failed_tests
+    )
 
 # =========================================================================
 # 1. ENGINEERING / TECHNICAL DASHBOARD (OFFICER & ADMIN)

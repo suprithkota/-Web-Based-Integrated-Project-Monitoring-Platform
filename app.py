@@ -115,12 +115,15 @@ def create_app(config_class=Config):
         except Exception:
             conflict_count = 0
             
+        from services.rbac_service import has_permission
         return {
+            'APP_NAME': app.config.get('APP_NAME', 'Web-Based Integrated Project-Monitoring Platform'),
             'DEMO_MODE': app.config.get('DEMO_MODE', True),
             'DISCLAIMER': app.config.get('DISCLAIMER', ''),
             'DATASET_LABEL': app.config.get('DATASET_LABEL', ''),
             'OPEN_ALERTS_COUNT': alert_count,
-            'UNRESOLVED_CONFLICTS_COUNT': conflict_count
+            'UNRESOLVED_CONFLICTS_COUNT': conflict_count,
+            'has_permission': has_permission
         }
 
     @app.route('/data/inspection_photos/<filename>')
