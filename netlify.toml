@@ -5,6 +5,9 @@
 [build.environment]
   PYTHON_VERSION = "3.11"
 
+[functions]
+  included_files = ["templates/**", "instance/**", "data/**", "database/**", "routes/**", "services/**", "static/**", "ml/**"]
+
 [[redirects]]
   from = "/static/*"
   to = "/static/:splat"
@@ -14,3 +17,4 @@
   from = "/*"
   to = "/.netlify/functions/api"
   status = 200
+  force = true

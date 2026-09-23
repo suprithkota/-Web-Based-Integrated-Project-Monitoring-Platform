@@ -23,7 +23,27 @@ def response(app, event, context):
     else:
         body_bytes = body.encode('utf-8') if isinstance(body, str) else body
 
-    path = event.get('path', '/')
+    # Extract real request path from Netlify headers or event
+    raw_path = (
+        headers.get('x-nf-original-path') or
+        headers.get('x-original-url') or
+        headers.get('x-rewrite-url') or
+        headers.get('x-forwarded-uri') or
+        event.get('path') or
+        '/'
+    )
+
+    if raw_path.startswith('/.netlify/functions/api'):
+        path = raw_path[len('/.netlify/functions/api'):] or '/'
+    elif raw_path.startswith('/.netlify/functions'):
+        parts = raw_path.split('/', 3)
+        path = '/' + parts[3] if len(parts) > 3 else '/'
+    else:
+        path = raw_path
+
+    if not path.startswith('/'):
+        path = '/' + path
+
 
     environ = {
         'REQUEST_METHOD': event.get('httpMethod', 'GET'),
